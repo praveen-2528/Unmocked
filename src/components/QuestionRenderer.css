@@ -1,0 +1,231 @@
+/* ── Question Renderer Base ───────────────────────────────────────── */
+.q-renderer {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.q-direction {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+    padding-left: 0.5rem;
+    border-left: 3px solid rgba(255, 255, 255, 0.15);
+}
+
+.q-prompt {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 1.25rem;
+    line-height: 1.6;
+}
+
+/* ── Syllogism Render Layout ───────────────────────────────────────── */
+.q-syllogism-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 1rem 0;
+}
+
+.q-syllogism-card {
+    padding: 1.25rem 1.5rem;
+    border-radius: 16px;
+    background: rgba(30, 41, 59, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.01);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.q-syllogism-card:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+    transform: translateY(-2px);
+}
+
+.q-card-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    color: #a5b4fc;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 0.5rem;
+}
+
+.q-statement-list, .q-conclusion-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.q-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.q-marker {
+    font-weight: 700;
+    color: #818cf8;
+    min-width: 1.25rem;
+    flex-shrink: 0;
+}
+
+.q-marker.roman {
+    color: #c084fc;
+}
+
+.q-content {
+    flex: 1;
+}
+
+/* ── English Error Segment Capsules ────────────────────────────────── */
+.q-sentence-box {
+    padding: 1.5rem;
+    border-radius: 16px;
+    background: rgba(30, 41, 59, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    margin: 1rem 0;
+}
+
+.q-capsules-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.q-capsule-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.q-capsule {
+    padding: 0.6rem 1rem;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.25s ease;
+}
+
+.q-capsule:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.35);
+    transform: scale(1.02);
+}
+
+.q-capsule-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.q-capsule-letter {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #a5b4fc;
+    background: rgba(255, 255, 255, 0.04);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Multiline Statements Layout ────────────────────────────────────── */
+.q-statements-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.q-stmt-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 12px;
+    background: rgba(30, 41, 59, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-left: 3px solid var(--primary);
+}
+
+.q-stmt-label {
+    font-weight: 700;
+    color: #a5b4fc;
+    min-width: 1.5rem;
+    flex-shrink: 0;
+}
+
+.q-stmt-content {
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    text-align: left;
+}
+
+/* ── Plain Text Render ─────────────────────────────────────────────── */
+.q-plain {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.q-plain-paragraph {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.q-plain-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    padding-left: 0.5rem;
+}
+
+.q-bullet {
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 1.25rem;
+    flex-shrink: 0;
+}
+
+.q-bullet-text {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.q-spacer {
+    height: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .q-syllogism-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}

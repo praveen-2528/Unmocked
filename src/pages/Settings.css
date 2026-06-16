@@ -1,0 +1,138 @@
+.settings-container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.settings-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.settings-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.profile-card,
+.password-card {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem !important;
+}
+
+.profile-card h3,
+.password-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.profile-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.profile-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.profile-label {
+    width: 60px;
+    font-weight: 600;
+}
+
+.profile-value {
+    color: var(--text-primary);
+}
+
+.password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.password-form input {
+    padding: 0.65rem 0.9rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.password-form input:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.password-form input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.settings-msg {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+.settings-msg.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.settings-msg.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.settings-back {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.name-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.profile-row.input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+}
+
+.name-form input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    max-width: 300px;
+}
+
+.name-form input:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.5);
+}

@@ -1,0 +1,4 @@
+question,option_a,option_b,option_c,option_d,correct_option,explanation,subject,topic,subtopic,difficulty,question_type,exam_type
+"What is the capital of France?","London","Berlin","Paris","Madrid",C,"Paris is the capital and most populous city of France.","General Awareness","World Geography","European Capitals",Easy,MCQ,ssc_cgl_tier1
+"Which planet is known as the Red Planet?","Venus","Mars","Jupiter","Saturn",B,"Mars appears red due to iron oxide on its surface.","General Awareness","Space Science","Planets",Easy,MCQ,ssc_cgl_tier1
+"What does the idiom 'break the ice' mean?","To start a conversation","To end a relationship","To cool down","To smash something",A,"Breaking the ice means initiating conversation to reduce tension.","English Comprehension","Idioms and Phrases","Action",Medium,MCQ,ssc_cgl_tier1

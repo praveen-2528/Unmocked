@@ -1,0 +1,1135 @@
+{
+  "topic": "Idioms and Phrases",
+  "exam": "SSC CGL Tier-1",
+  "total_questions": 75,
+  "created_date": "2025-02-19",
+  "marks_per_question": 2,
+  "negative_marks": 0.5,
+  "questions": [
+    {
+      "id": "IDP001",
+      "difficulty": "Easy",
+      "question": "To hit the nail on the head",
+      "options": {
+        "A": "To describe exactly what is causing a situation",
+        "B": "To work very hard",
+        "C": "To miss the point",
+        "D": "To cause damage"
+      },
+      "correct_option": "A",
+      "explanation": "This idiom means to be exactly right about something or to identify the precise issue.",
+      "shortcut": "Exactly right.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP002",
+      "difficulty": "Easy",
+      "question": "To let the cat out of the bag",
+      "options": {
+        "A": "To release an animal",
+        "B": "To reveal a secret",
+        "C": "To cause trouble",
+        "D": "To buy something"
+      },
+      "correct_option": "B",
+      "explanation": "This idiom means to accidentally or deliberately reveal a secret.",
+      "shortcut": "Reveal secret.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP003",
+      "difficulty": "Easy",
+      "question": "To be in hot water",
+      "options": {
+        "A": "To be in a comfortable situation",
+        "B": "To be in trouble",
+        "C": "To be very angry",
+        "D": "To be very happy"
+      },
+      "correct_option": "B",
+      "explanation": "Being in hot water means being in a difficult or troublesome situation.",
+      "shortcut": "In trouble.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP004",
+      "difficulty": "Easy",
+      "question": "To cost an arm and a leg",
+      "options": {
+        "A": "To be very cheap",
+        "B": "To be very expensive",
+        "C": "To be painful",
+        "D": "To be risky"
+      },
+      "correct_option": "B",
+      "explanation": "Something that costs an arm and a leg is extremely expensive.",
+      "shortcut": "Very expensive.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP005",
+      "difficulty": "Easy",
+      "question": "To kill two birds with one stone",
+      "options": {
+        "A": "To be cruel to animals",
+        "B": "To achieve two things at once",
+        "C": "To waste time",
+        "D": "To be efficient"
+      },
+      "correct_option": "B",
+      "explanation": "This idiom means to accomplish two different things with a single action.",
+      "shortcut": "Two goals at once.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP006",
+      "difficulty": "Easy",
+      "question": "To bite the bullet",
+      "options": {
+        "A": "To endure a painful situation bravely",
+        "B": "To eat quickly",
+        "C": "To avoid responsibility",
+        "D": "To attack someone"
+      },
+      "correct_option": "A",
+      "explanation": "Biting the bullet means facing a difficult or unpleasant situation with courage.",
+      "shortcut": "Face difficulty bravely.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP007",
+      "difficulty": "Easy",
+      "question": "To burn the midnight oil",
+      "options": {
+        "A": "To waste time",
+        "B": "To work late into the night",
+        "C": "To sleep early",
+        "D": "To set something on fire"
+      },
+      "correct_option": "B",
+      "explanation": "This idiom means to stay up late working or studying.",
+      "shortcut": "Work late.",
+      "subtopic": "Time"
+    },
+    {
+      "id": "IDP008",
+      "difficulty": "Easy",
+      "question": "To call it a day",
+      "options": {
+        "A": "To start working",
+        "B": "To stop working for the day",
+        "C": "To take a break",
+        "D": "To celebrate"
+      },
+      "correct_option": "B",
+      "explanation": "Calling it a day means deciding to stop what you are doing for the rest of the day.",
+      "shortcut": "Stop work.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP009",
+      "difficulty": "Easy",
+      "question": "To cut corners",
+      "options": {
+        "A": "To take a shortcut",
+        "B": "To do something poorly to save time or money",
+        "C": "To be precise",
+        "D": "To avoid work"
+      },
+      "correct_option": "B",
+      "explanation": "Cutting corners means doing something in the easiest or cheapest way, often sacrificing quality.",
+      "shortcut": "Do poorly to save.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP010",
+      "difficulty": "Easy",
+      "question": "To feel under the weather",
+      "options": {
+        "A": "To feel happy",
+        "B": "To feel ill",
+        "C": "To feel energetic",
+        "D": "To feel sad"
+      },
+      "correct_option": "B",
+      "explanation": "Feeling under the weather means feeling unwell or sick.",
+      "shortcut": "Feel ill.",
+      "subtopic": "Health"
+    },
+    {
+      "id": "IDP011",
+      "difficulty": "Easy",
+      "question": "To give the benefit of the doubt",
+      "options": {
+        "A": "To doubt someone",
+        "B": "To believe someone without proof",
+        "C": "To give someone a chance",
+        "D": "To be suspicious"
+      },
+      "correct_option": "B",
+      "explanation": "Giving the benefit of the doubt means choosing to believe someone even though you are not sure they are telling the truth.",
+      "shortcut": "Believe without proof.",
+      "subtopic": "Trust"
+    },
+    {
+      "id": "IDP012",
+      "difficulty": "Easy",
+      "question": "To go the extra mile",
+      "options": {
+        "A": "To travel far",
+        "B": "To make extra effort",
+        "C": "To avoid work",
+        "D": "To run fast"
+      },
+      "correct_option": "B",
+      "explanation": "Going the extra mile means making more effort than is expected.",
+      "shortcut": "Extra effort.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP013",
+      "difficulty": "Easy",
+      "question": "To hit the sack",
+      "options": {
+        "A": "To go to bed",
+        "B": "To hit someone",
+        "C": "To pack a bag",
+        "D": "To work hard"
+      },
+      "correct_option": "A",
+      "explanation": "Hitting the sack means going to sleep.",
+      "shortcut": "Go to bed.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP014",
+      "difficulty": "Easy",
+      "question": "To jump on the bandwagon",
+      "options": {
+        "A": "To start a new trend",
+        "B": "To join a popular trend",
+        "C": "To avoid trends",
+        "D": "To criticize"
+      },
+      "correct_option": "B",
+      "explanation": "Jumping on the bandwagon means joining a popular activity or trend.",
+      "shortcut": "Join trend.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP015",
+      "difficulty": "Easy",
+      "question": "To keep your chin up",
+      "options": {
+        "A": "To be arrogant",
+        "B": "To remain cheerful in difficult times",
+        "C": "To look up",
+        "D": "To avoid trouble"
+      },
+      "correct_option": "B",
+      "explanation": "Keeping your chin up means staying positive and cheerful during a difficult time.",
+      "shortcut": "Stay positive.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP016",
+      "difficulty": "Easy",
+      "question": "To let sleeping dogs lie",
+      "options": {
+        "A": "To avoid interfering in a situation that might cause trouble",
+        "B": "To wake up dogs",
+        "C": "To be lazy",
+        "D": "To ignore problems"
+      },
+      "correct_option": "A",
+      "explanation": "Letting sleeping dogs lie means not interfering in a situation because it could cause problems.",
+      "shortcut": "Don't stir trouble.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP017",
+      "difficulty": "Easy",
+      "question": "To make a long story short",
+      "options": {
+        "A": "To write a short story",
+        "B": "To summarize",
+        "C": "To tell a lie",
+        "D": "To avoid details"
+      },
+      "correct_option": "B",
+      "explanation": "Making a long story short means summarizing a long account.",
+      "shortcut": "Summarize.",
+      "subtopic": "Communication"
+    },
+    {
+      "id": "IDP018",
+      "difficulty": "Easy",
+      "question": "Once in a blue moon",
+      "options": {
+        "A": "Very often",
+        "B": "Very rarely",
+        "C": "Never",
+        "D": "Sometimes"
+      },
+      "correct_option": "B",
+      "explanation": "Once in a blue moon means very rarely.",
+      "shortcut": "Rarely.",
+      "subtopic": "Time"
+    },
+    {
+      "id": "IDP019",
+      "difficulty": "Easy",
+      "question": "Piece of cake",
+      "options": {
+        "A": "Very difficult",
+        "B": "Very easy",
+        "C": "Delicious",
+        "D": "Expensive"
+      },
+      "correct_option": "B",
+      "explanation": "A piece of cake means something very easy to do.",
+      "shortcut": "Very easy.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP020",
+      "difficulty": "Easy",
+      "question": "To spill the beans",
+      "options": {
+        "A": "To reveal a secret",
+        "B": "To make a mess",
+        "C": "To cook",
+        "D": "To be careless"
+      },
+      "correct_option": "A",
+      "explanation": "Spilling the beans means revealing a secret.",
+      "shortcut": "Reveal secret.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP021",
+      "difficulty": "Easy",
+      "question": "To take with a grain of salt",
+      "options": {
+        "A": "To believe completely",
+        "B": "To not completely believe",
+        "C": "To add salt",
+        "D": "To be skeptical"
+      },
+      "correct_option": "B",
+      "explanation": "Taking something with a grain of salt means not completely believing it.",
+      "shortcut": "Don't fully believe.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP022",
+      "difficulty": "Easy",
+      "question": "To throw in the towel",
+      "options": {
+        "A": "To give up",
+        "B": "To fight harder",
+        "C": "To clean up",
+        "D": "To celebrate"
+      },
+      "correct_option": "A",
+      "explanation": "Throwing in the towel means giving up or admitting defeat.",
+      "shortcut": "Give up.",
+      "subtopic": "Sports"
+    },
+    {
+      "id": "IDP023",
+      "difficulty": "Easy",
+      "question": "To turn a blind eye",
+      "options": {
+        "A": "To ignore something",
+        "B": "To see clearly",
+        "C": "To be blind",
+        "D": "To look away"
+      },
+      "correct_option": "A",
+      "explanation": "Turning a blind eye means deliberately ignoring something.",
+      "shortcut": "Ignore.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP024",
+      "difficulty": "Easy",
+      "question": "To be up in arms",
+      "options": {
+        "A": "To be very angry",
+        "B": "To be happy",
+        "C": "To be confused",
+        "D": "To be armed"
+      },
+      "correct_option": "A",
+      "explanation": "Being up in arms means being very angry and protesting.",
+      "shortcut": "Very angry.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP025",
+      "difficulty": "Easy",
+      "question": "Wild goose chase",
+      "options": {
+        "A": "A fun adventure",
+        "B": "A useless pursuit",
+        "C": "A successful mission",
+        "D": "A fast race"
+      },
+      "correct_option": "B",
+      "explanation": "A wild goose chase is a search or pursuit that is pointless or futile.",
+      "shortcut": "Useless search.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP026",
+      "difficulty": "Easy",
+      "question": "To beat around the bush",
+      "options": {
+        "A": "To avoid saying something directly",
+        "B": "To hit the bushes",
+        "C": "To be direct",
+        "D": "To waste time"
+      },
+      "correct_option": "A",
+      "explanation": "Beating around the bush means talking about something without getting to the point.",
+      "shortcut": "Avoid the point.",
+      "subtopic": "Nature"
+    },
+    {
+      "id": "IDP027",
+      "difficulty": "Easy",
+      "question": "To break the ice",
+      "options": {
+        "A": "To start a conversation",
+        "B": "To end a relationship",
+        "C": "To cool down",
+        "D": "To smash something"
+      },
+      "correct_option": "A",
+      "explanation": "Breaking the ice means initiating conversation in a social setting to reduce tension.",
+      "shortcut": "Start talking.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP028",
+      "difficulty": "Easy",
+      "question": "To cry over spilt milk",
+      "options": {
+        "A": "To be sad about the past",
+        "B": "To regret something that cannot be undone",
+        "C": "To be wasteful",
+        "D": "To be careful"
+      },
+      "correct_option": "B",
+      "explanation": "Crying over spilt milk means being upset about something that has already happened and cannot be changed.",
+      "shortcut": "Regret the past.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP029",
+      "difficulty": "Easy",
+      "question": "To cut the mustard",
+      "options": {
+        "A": "To meet expectations",
+        "B": "To fail",
+        "C": "To cook",
+        "D": "To be sharp"
+      },
+      "correct_option": "A",
+      "explanation": "Cutting the mustard means meeting the required standard or expectation.",
+      "shortcut": "Meet standards.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP030",
+      "difficulty": "Easy",
+      "question": "To face the music",
+      "options": {
+        "A": "To enjoy music",
+        "B": "To face consequences",
+        "C": "To perform",
+        "D": "To avoid punishment"
+      },
+      "correct_option": "B",
+      "explanation": "Facing the music means accepting the unpleasant consequences of one's actions.",
+      "shortcut": "Accept consequences.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP031",
+      "difficulty": "Easy",
+      "question": "To get a taste of your own medicine",
+      "options": {
+        "A": "To be treated the way you treat others",
+        "B": "To take medicine",
+        "C": "To be sick",
+        "D": "To enjoy food"
+      },
+      "correct_option": "A",
+      "explanation": "Getting a taste of your own medicine means experiencing the same unpleasant treatment you have given to others.",
+      "shortcut": "Reciprocal treatment.",
+      "subtopic": "Health"
+    },
+    {
+      "id": "IDP032",
+      "difficulty": "Easy",
+      "question": "To give the cold shoulder",
+      "options": {
+        "A": "To be friendly",
+        "B": "To ignore someone",
+        "C": "To be cold",
+        "D": "To help someone"
+      },
+      "correct_option": "B",
+      "explanation": "Giving the cold shoulder means deliberately ignoring someone.",
+      "shortcut": "Ignore.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP033",
+      "difficulty": "Easy",
+      "question": "To have a heart of gold",
+      "options": {
+        "A": "To be very kind",
+        "B": "To be rich",
+        "C": "To be hard-hearted",
+        "D": "To be selfish"
+      },
+      "correct_option": "A",
+      "explanation": "Having a heart of gold means being extremely kind and generous.",
+      "shortcut": "Very kind.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP034",
+      "difficulty": "Easy",
+      "question": "In the same boat",
+      "options": {
+        "A": "In a different situation",
+        "B": "In the same situation",
+        "C": "On a boat",
+        "D": "Traveling together"
+      },
+      "correct_option": "B",
+      "explanation": "Being in the same boat means being in the same difficult circumstances as others.",
+      "shortcut": "Same situation.",
+      "subtopic": "Travel"
+    },
+    {
+      "id": "IDP035",
+      "difficulty": "Easy",
+      "question": "To keep your fingers crossed",
+      "options": {
+        "A": "To hope for good luck",
+        "B": "To be nervous",
+        "C": "To be angry",
+        "D": "To pray"
+      },
+      "correct_option": "A",
+      "explanation": "Keeping your fingers crossed means hoping for a positive outcome.",
+      "shortcut": "Hope for luck.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP036",
+      "difficulty": "Easy",
+      "question": "To let off steam",
+      "options": {
+        "A": "To release anger or stress",
+        "B": "To boil water",
+        "C": "To relax",
+        "D": "To work hard"
+      },
+      "correct_option": "A",
+      "explanation": "Letting off steam means releasing pent-up energy or emotions, often through physical activity.",
+      "shortcut": "Release stress.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP037",
+      "difficulty": "Easy",
+      "question": "To make ends meet",
+      "options": {
+        "A": "To manage financially",
+        "B": "To join ends",
+        "C": "To meet goals",
+        "D": "To finish work"
+      },
+      "correct_option": "A",
+      "explanation": "Making ends meet means earning enough money to live on.",
+      "shortcut": "Manage money.",
+      "subtopic": "Finance"
+    },
+    {
+      "id": "IDP038",
+      "difficulty": "Easy",
+      "question": "On the ball",
+      "options": {
+        "A": "To be alert and efficient",
+        "B": "To be lazy",
+        "C": "To play sports",
+        "D": "To be confused"
+      },
+      "correct_option": "A",
+      "explanation": "Being on the ball means being quick to understand and react to things.",
+      "shortcut": "Alert and efficient.",
+      "subtopic": "Sports"
+    },
+    {
+      "id": "IDP039",
+      "difficulty": "Easy",
+      "question": "To pull someone's leg",
+      "options": {
+        "A": "To tease someone",
+        "B": "To trip someone",
+        "C": "To help someone",
+        "D": "To hurt someone"
+      },
+      "correct_option": "A",
+      "explanation": "Pulling someone's leg means teasing or joking with them.",
+      "shortcut": "Tease.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP040",
+      "difficulty": "Easy",
+      "question": "To put all your eggs in one basket",
+      "options": {
+        "A": "To risk everything on one venture",
+        "B": "To be careful",
+        "C": "To cook eggs",
+        "D": "To be organized"
+      },
+      "correct_option": "A",
+      "explanation": "Putting all your eggs in one basket means risking everything on a single opportunity.",
+      "shortcut": "Risky concentration.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP041",
+      "difficulty": "Easy",
+      "question": "To ring a bell",
+      "options": {
+        "A": "To sound familiar",
+        "B": "To be noisy",
+        "C": "To call someone",
+        "D": "To start an event"
+      },
+      "correct_option": "A",
+      "explanation": "If something rings a bell, it sounds familiar or reminds you of something.",
+      "shortcut": "Sounds familiar.",
+      "subtopic": "Sound"
+    },
+    {
+      "id": "IDP042",
+      "difficulty": "Easy",
+      "question": "To see eye to eye",
+      "options": {
+        "A": "To agree",
+        "B": "To disagree",
+        "C": "To look at each other",
+        "D": "To be at the same level"
+      },
+      "correct_option": "A",
+      "explanation": "Seeing eye to eye means agreeing with someone.",
+      "shortcut": "Agree.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP043",
+      "difficulty": "Easy",
+      "question": "To sit on the fence",
+      "options": {
+        "A": "To be undecided",
+        "B": "To be lazy",
+        "C": "To be comfortable",
+        "D": "To avoid work"
+      },
+      "correct_option": "A",
+      "explanation": "Sitting on the fence means avoiding making a decision or choice.",
+      "shortcut": "Undecided.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP044",
+      "difficulty": "Easy",
+      "question": "To steal someone's thunder",
+      "options": {
+        "A": "To take credit for someone else's idea",
+        "B": "To steal something",
+        "C": "To create a storm",
+        "D": "To be loud"
+      },
+      "correct_option": "A",
+      "explanation": "Stealing someone's thunder means taking attention or credit away from someone else.",
+      "shortcut": "Take credit.",
+      "subtopic": "Nature"
+    },
+    {
+      "id": "IDP045",
+      "difficulty": "Easy",
+      "question": "To take it easy",
+      "options": {
+        "A": "To relax",
+        "B": "To work hard",
+        "C": "To be easygoing",
+        "D": "To avoid trouble"
+      },
+      "correct_option": "A",
+      "explanation": "Taking it easy means relaxing and not working too hard.",
+      "shortcut": "Relax.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP046",
+      "difficulty": "Easy",
+      "question": "The ball is in your court",
+      "options": {
+        "A": "It's your decision or turn to act",
+        "B": "You are playing a game",
+        "C": "You are in trouble",
+        "D": "You are winning"
+      },
+      "correct_option": "A",
+      "explanation": "When the ball is in your court, it means it is your turn to take action or make a decision.",
+      "shortcut": "Your move.",
+      "subtopic": "Sports"
+    },
+    {
+      "id": "IDP047",
+      "difficulty": "Easy",
+      "question": "Through thick and thin",
+      "options": {
+        "A": "Through good and bad times",
+        "B": "Through dense forest",
+        "C": "Through difficult times only",
+        "D": "Through easy times only"
+      },
+      "correct_option": "A",
+      "explanation": "Through thick and thin means in all circumstances, both good and bad.",
+      "shortcut": "All conditions.",
+      "subtopic": "Time"
+    },
+    {
+      "id": "IDP048",
+      "difficulty": "Easy",
+      "question": "When pigs fly",
+      "options": {
+        "A": "Never",
+        "B": "Always",
+        "C": "Sometimes",
+        "D": "Rarely"
+      },
+      "correct_option": "A",
+      "explanation": "When pigs fly is a humorous way of saying something will never happen.",
+      "shortcut": "Never.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP049",
+      "difficulty": "Easy",
+      "question": "You can't judge a book by its cover",
+      "options": {
+        "A": "Don't judge by appearance",
+        "B": "Don't read books",
+        "C": "Books are not important",
+        "D": "Judge everything"
+      },
+      "correct_option": "A",
+      "explanation": "This means you should not form an opinion based solely on outward appearance.",
+      "shortcut": "Appearances deceive.",
+      "subtopic": "Books"
+    },
+    {
+      "id": "IDP050",
+      "difficulty": "Easy",
+      "question": "To add insult to injury",
+      "options": {
+        "A": "To make a bad situation worse",
+        "B": "To hurt someone physically",
+        "C": "To insult someone",
+        "D": "To apologize"
+      },
+      "correct_option": "A",
+      "explanation": "Adding insult to injury means making a bad situation even worse.",
+      "shortcut": "Worsen situation.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP051",
+      "difficulty": "Easy",
+      "question": "Meaning: To reveal a secret",
+      "options": {
+        "A": "To let the cat out of the bag",
+        "B": "To kill two birds with one stone",
+        "C": "To hit the nail on the head",
+        "D": "To burn the midnight oil"
+      },
+      "correct_option": "A",
+      "explanation": "Letting the cat out of the bag means revealing a secret.",
+      "shortcut": "Reveal secret.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP052",
+      "difficulty": "Easy",
+      "question": "Meaning: To be very expensive",
+      "options": {
+        "A": "To cost an arm and a leg",
+        "B": "To hit the sack",
+        "C": "To cut corners",
+        "D": "To be in hot water"
+      },
+      "correct_option": "A",
+      "explanation": "Costing an arm and a leg means being very expensive.",
+      "shortcut": "Very expensive.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP053",
+      "difficulty": "Easy",
+      "question": "Meaning: To work late into the night",
+      "options": {
+        "A": "To burn the midnight oil",
+        "B": "To call it a day",
+        "C": "To hit the sack",
+        "D": "To go the extra mile"
+      },
+      "correct_option": "A",
+      "explanation": "Burning the midnight oil means working late.",
+      "shortcut": "Work late.",
+      "subtopic": "Time"
+    },
+    {
+      "id": "IDP054",
+      "difficulty": "Easy",
+      "question": "Meaning: To give up",
+      "options": {
+        "A": "To throw in the towel",
+        "B": "To face the music",
+        "C": "To bite the bullet",
+        "D": "To keep your chin up"
+      },
+      "correct_option": "A",
+      "explanation": "Throwing in the towel means giving up.",
+      "shortcut": "Give up.",
+      "subtopic": "Sports"
+    },
+    {
+      "id": "IDP055",
+      "difficulty": "Easy",
+      "question": "Meaning: To ignore someone deliberately",
+      "options": {
+        "A": "To give the cold shoulder",
+        "B": "To turn a blind eye",
+        "C": "To look away",
+        "D": "To see eye to eye"
+      },
+      "correct_option": "A",
+      "explanation": "Giving the cold shoulder means ignoring someone.",
+      "shortcut": "Ignore.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP056",
+      "difficulty": "Easy",
+      "question": "Meaning: To be in trouble",
+      "options": {
+        "A": "To be in hot water",
+        "B": "To be in cold water",
+        "C": "To be under the weather",
+        "D": "To be up in arms"
+      },
+      "correct_option": "A",
+      "explanation": "Being in hot water means being in trouble.",
+      "shortcut": "In trouble.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP057",
+      "difficulty": "Easy",
+      "question": "Meaning: To achieve two things at once",
+      "options": {
+        "A": "To kill two birds with one stone",
+        "B": "To hit two targets",
+        "C": "To cut corners",
+        "D": "To make a long story short"
+      },
+      "correct_option": "A",
+      "explanation": "Killing two birds with one stone means achieving two goals with one action.",
+      "shortcut": "Two goals.",
+      "subtopic": "Animals"
+    },
+    {
+      "id": "IDP058",
+      "difficulty": "Easy",
+      "question": "Meaning: To be very easy",
+      "options": {
+        "A": "Piece of cake",
+        "B": "A hard nut",
+        "C": "A walk in the park",
+        "D": "A bed of roses"
+      },
+      "correct_option": "A",
+      "explanation": "Piece of cake means very easy.",
+      "shortcut": "Very easy.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP059",
+      "difficulty": "Easy",
+      "question": "Meaning: To be extremely happy",
+      "options": {
+        "A": "On cloud nine",
+        "B": "Under the weather",
+        "C": "In hot water",
+        "D": "Up in arms"
+      },
+      "correct_option": "A",
+      "explanation": "On cloud nine means extremely happy.",
+      "shortcut": "Very happy.",
+      "subtopic": "Weather"
+    },
+    {
+      "id": "IDP060",
+      "difficulty": "Easy",
+      "question": "Meaning: To be very angry",
+      "options": {
+        "A": "To be up in arms",
+        "B": "To be down in the dumps",
+        "C": "To be on edge",
+        "D": "To be over the moon"
+      },
+      "correct_option": "A",
+      "explanation": "Up in arms means very angry.",
+      "shortcut": "Very angry.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP061",
+      "difficulty": "Easy",
+      "question": "Meaning: To be in the same difficult situation",
+      "options": {
+        "A": "In the same boat",
+        "B": "On the same page",
+        "C": "In deep water",
+        "D": "Out of the woods"
+      },
+      "correct_option": "A",
+      "explanation": "In the same boat means in the same difficult circumstances.",
+      "shortcut": "Same situation.",
+      "subtopic": "Travel"
+    },
+    {
+      "id": "IDP062",
+      "difficulty": "Easy",
+      "question": "Meaning: To be undecided",
+      "options": {
+        "A": "To sit on the fence",
+        "B": "To be on the ball",
+        "C": "To be on the fence",
+        "D": "To be in two minds"
+      },
+      "correct_option": "A",
+      "explanation": "Sitting on the fence means being undecided.",
+      "shortcut": "Undecided.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP063",
+      "difficulty": "Easy",
+      "question": "Meaning: To hope for good luck",
+      "options": {
+        "A": "To keep your fingers crossed",
+        "B": "To cross your heart",
+        "C": "To hold your breath",
+        "D": "To bite your tongue"
+      },
+      "correct_option": "A",
+      "explanation": "Keeping fingers crossed is a gesture of hoping for good luck.",
+      "shortcut": "Hope for luck.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP064",
+      "difficulty": "Easy",
+      "question": "Meaning: To manage financially",
+      "options": {
+        "A": "To make ends meet",
+        "B": "To meet ends",
+        "C": "To cut corners",
+        "D": "To go the extra mile"
+      },
+      "correct_option": "A",
+      "explanation": "Making ends meet means having enough money to live on.",
+      "shortcut": "Manage money.",
+      "subtopic": "Finance"
+    },
+    {
+      "id": "IDP065",
+      "difficulty": "Easy",
+      "question": "Meaning: To agree with someone",
+      "options": {
+        "A": "To see eye to eye",
+        "B": "To be on the same page",
+        "C": "To see face to face",
+        "D": "To meet eye to eye"
+      },
+      "correct_option": "A",
+      "explanation": "Seeing eye to eye means agreeing.",
+      "shortcut": "Agree.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP066",
+      "difficulty": "Easy",
+      "question": "Meaning: To avoid the main topic",
+      "options": {
+        "A": "To beat around the bush",
+        "B": "To hit the nail on the head",
+        "C": "To get to the point",
+        "D": "To cut to the chase"
+      },
+      "correct_option": "A",
+      "explanation": "Beating around the bush means avoiding the main topic.",
+      "shortcut": "Avoid topic.",
+      "subtopic": "Nature"
+    },
+    {
+      "id": "IDP067",
+      "difficulty": "Easy",
+      "question": "Meaning: To start a conversation",
+      "options": {
+        "A": "To break the ice",
+        "B": "To break the silence",
+        "C": "To break the news",
+        "D": "To break ground"
+      },
+      "correct_option": "A",
+      "explanation": "Breaking the ice means starting a conversation in a social setting.",
+      "shortcut": "Start talking.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP068",
+      "difficulty": "Easy",
+      "question": "Meaning: To regret something that cannot be changed",
+      "options": {
+        "A": "To cry over spilt milk",
+        "B": "To cry over spilled milk",
+        "C": "To cry over nothing",
+        "D": "To cry wolf"
+      },
+      "correct_option": "A",
+      "explanation": "Crying over spilt milk means regretting something that has already happened.",
+      "shortcut": "Regret past.",
+      "subtopic": "Food"
+    },
+    {
+      "id": "IDP069",
+      "difficulty": "Easy",
+      "question": "Meaning: To face consequences",
+      "options": {
+        "A": "To face the music",
+        "B": "To face the facts",
+        "C": "To face reality",
+        "D": "To face the truth"
+      },
+      "correct_option": "A",
+      "explanation": "Facing the music means accepting the unpleasant consequences.",
+      "shortcut": "Accept consequences.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP070",
+      "difficulty": "Easy",
+      "question": "Meaning: To be very kind",
+      "options": {
+        "A": "To have a heart of gold",
+        "B": "To have a heart of stone",
+        "C": "To have a heart of steel",
+        "D": "To have a heart of glass"
+      },
+      "correct_option": "A",
+      "explanation": "Having a heart of gold means being very kind.",
+      "shortcut": "Very kind.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP071",
+      "difficulty": "Easy",
+      "question": "Meaning: To sound familiar",
+      "options": {
+        "A": "To ring a bell",
+        "B": "To ring true",
+        "C": "To ring out",
+        "D": "To ring in"
+      },
+      "correct_option": "A",
+      "explanation": "Ringing a bell means sounding familiar.",
+      "shortcut": "Familiar.",
+      "subtopic": "Sound"
+    },
+    {
+      "id": "IDP072",
+      "difficulty": "Easy",
+      "question": "Meaning: To tease someone",
+      "options": {
+        "A": "To pull someone's leg",
+        "B": "To push someone's leg",
+        "C": "To shake someone's leg",
+        "D": "To stretch someone's leg"
+      },
+      "correct_option": "A",
+      "explanation": "Pulling someone's leg means teasing them.",
+      "shortcut": "Tease.",
+      "subtopic": "Body"
+    },
+    {
+      "id": "IDP073",
+      "difficulty": "Easy",
+      "question": "Meaning: To make a bad situation worse",
+      "options": {
+        "A": "To add insult to injury",
+        "B": "To add fuel to fire",
+        "C": "To pour salt on a wound",
+        "D": "All of the above"
+      },
+      "correct_option": "A",
+      "explanation": "Adding insult to injury means making a bad situation worse. (Note: 'To add fuel to fire' also means to make a situation worse, but the given idiom is 'add insult to injury')",
+      "shortcut": "Worsen.",
+      "subtopic": "Action"
+    },
+    {
+      "id": "IDP074",
+      "difficulty": "Easy",
+      "question": "Meaning: To be very rarely",
+      "options": {
+        "A": "Once in a blue moon",
+        "B": "Once in a lifetime",
+        "C": "Once in a while",
+        "D": "Once upon a time"
+      },
+      "correct_option": "A",
+      "explanation": "Once in a blue moon means very rarely.",
+      "shortcut": "Rarely.",
+      "subtopic": "Time"
+    },
+    {
+      "id": "IDP075",
+      "difficulty": "Easy",
+      "question": "Meaning: To take credit for someone else's idea",
+      "options": {
+        "A": "To steal someone's thunder",
+        "B": "To steal someone's spotlight",
+        "C": "To steal someone's show",
+        "D": "To steal someone's idea"
+      },
+      "correct_option": "A",
+      "explanation": "Stealing someone's thunder means taking credit for their idea or achievement.",
+      "shortcut": "Take credit.",
+      "subtopic": "Nature"
+    }
+  ]
+}

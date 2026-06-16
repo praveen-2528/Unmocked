@@ -1,0 +1,404 @@
+.qbank-container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+}
+
+.qbank-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.qbank-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.qbank-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Actions */
+.qbank-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* Filters */
+.qbank-filters {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    min-width: 200px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 0.6rem 0;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.search-box svg {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.qbank-filters select {
+    padding: 0.6rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+/* Import Panel */
+.import-panel,
+.generate-panel {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem !important;
+}
+
+.import-panel h3,
+.generate-panel h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.import-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.template-btn {
+    text-decoration: none;
+    color: var(--text-secondary) !important;
+    border-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+.template-btn:hover {
+    color: #c4b5fd !important;
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+.import-panel textarea {
+    width: 100%;
+    padding: 0.6rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    resize: vertical;
+    margin-bottom: 0.5rem;
+}
+
+.import-row,
+.gen-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.file-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.file-upload-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.import-msg {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Generate Panel */
+.gen-row select,
+.gen-row input[type="number"] {
+    padding: 0.5rem 0.7rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.gen-row input[type="number"] {
+    width: 70px;
+}
+
+.gen-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Question Cards */
+.questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.q-card {
+    padding: 1rem !important;
+}
+
+.q-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.q-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.q-tags {
+    display: flex;
+    gap: 0.3rem;
+    flex: 1;
+}
+
+.q-tag {
+    padding: 0.15rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.q-tag.subject {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+}
+
+.q-tag.diff-easy {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.q-tag.diff-medium {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.q-tag.diff-hard {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.q-tag.topic {
+    background: rgba(139, 92, 246, 0.12);
+    color: #c4b5fd;
+}
+
+.q-tag.type {
+    background: rgba(14, 165, 233, 0.12);
+    color: #7dd3fc;
+}
+
+.q-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.q-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.q-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.q-action-btn.danger:hover {
+    color: #f87171;
+}
+
+.q-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    white-space: pre-wrap;
+}
+
+.q-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.q-opt {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.q-opt.correct {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+.opt-letter {
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    min-width: 16px;
+}
+
+.correct-icon {
+    margin-left: auto;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+}
+
+.modal-card {
+    width: 100%;
+    max-width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem !important;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-header h3 {
+    font-size: 1rem;
+}
+
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.modal-body textarea,
+.modal-body input[type="text"] {
+    padding: 0.6rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.modal-body textarea {
+    resize: vertical;
+}
+
+.opt-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.opt-input-row input[type="radio"] {
+    accent-color: var(--primary);
+}
+
+.opt-input-row input[type="text"] {
+    flex: 1;
+}
+
+.form-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.form-row input,
+.form-row select {
+    flex: 1;
+    padding: 0.5rem 0.7rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.qbank-back {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        flex-direction: column;
+    }
+
+    .qbank-actions {
+        flex-direction: column;
+    }
+}

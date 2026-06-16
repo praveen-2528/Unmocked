@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC CGL Topic Index | Glassmorphism + Solar Orbits</title>
+    <style>
+        /* Reset and base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background-color: #0a0a0a;
+            /* dark base for contrast */
+            color: #eee;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ---------- Animated background circles (solar system) ---------- */
+        .orbit-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            /* so clicks pass through to links */
+        }
+
+        .orbit-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(200, 200, 200, 0.2));
+            filter: blur(20px);
+            opacity: 0.6;
+            animation: orbit linear infinite;
+        }
+
+        /* Red circles */
+        .orbit-circle.red {
+            background: radial-gradient(circle at 30% 30%, #ff8a8a, #ff4d4d);
+            filter: blur(25px);
+        }
+
+        /* Grey circles */
+        .orbit-circle.grey {
+            background: radial-gradient(circle at 30% 30%, #dddddd, #888888);
+            filter: blur(30px);
+        }
+
+        /* Define different orbits */
+        @keyframes orbit {
+            0% {
+                transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg);
+            }
+        }
+
+        /* Individual circle styles (sizes, radii, speeds set via inline styles) */
+        /* We'll generate them in HTML */
+
+        /* ---------- Main content with glassmorphism ---------- */
+        .content-wrapper {
+            position: relative;
+            z-index: 10;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            background-color: rgba(20, 20, 30, 0.4);
+            /* semi-transparent dark */
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(10, 10, 20, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 30px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f0f0;
+        }
+
+        h1 {
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(255, 75, 75, 0.5);
+            border-bottom: 3px solid rgba(255, 100, 100, 0.6);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .note {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-left: 5px solid #ff6b6b;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 0 16px 16px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ddd;
+            font-size: 1rem;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #ffb3b3;
+            border-bottom: 2px solid rgba(255, 100, 100, 0.5);
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-shadow: 0 2px 5px rgba(255, 0, 0, 0.3);
+        }
+
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px 20px;
+        }
+
+        .topic-item {
+            list-style: none;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .topic-item:hover {
+            background: rgba(255, 100, 100, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 50, 50, 0.3);
+            border-color: rgba(255, 150, 150, 0.5);
+        }
+
+        .topic-item a {
+            text-decoration: none;
+            color: #f0f0f0;
+            font-size: 1rem;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 12px;
+            transition: color 0.2s;
+        }
+
+        .topic-item a:hover {
+            color: #fff;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .topic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-wrapper {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+        }
+
+        /* For print, hide background and simplify */
+        @media print {
+            .orbit-container {
+                display: none;
+            }
+
+            .content-wrapper {
+                backdrop-filter: none;
+                background: white;
+                color: black;
+            }
+
+            .container {
+                background: white;
+                color: black;
+            }
+
+            a {
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated solar system background (blurred red & grey circles) -->
+    <div class="orbit-container">
+        <!-- We'll generate a bunch of circles with different orbits using inline styles -->
+        <!-- Red circles (larger, slower) -->
+        <div class="orbit-circle red"
+            style="width: 180px; height: 180px; top: 20%; left: 10%; --orbit-radius: 250px; animation-duration: 30s;">
+        </div>
+        <div class="orbit-circle red"
+            style="width: 130px; height: 130px; top: 60%; left: 70%; --orbit-radius: 300px; animation-duration: 25s;">
+        </div>
+        <div class="orbit-circle red"
+            style="width: 220px; height: 220px; top: 40%; left: 40%; --orbit-radius: 200px; animation-duration: 40s;">
+        </div>
+        <div class="orbit-circle red"
+            style="width: 90px; height: 90px; top: 80%; left: 20%; --orbit-radius: 180px; animation-duration: 20s;">
+        </div>
+        <div class="orbit-circle red"
+            style="width: 150px; height: 150px; top: 15%; left: 80%; --orbit-radius: 280px; animation-duration: 35s;">
+        </div>
+        <!-- Grey circles (smaller, faster) -->
+        <div class="orbit-circle grey"
+            style="width: 100px; height: 100px; top: 30%; left: 50%; --orbit-radius: 150px; animation-duration: 18s;">
+        </div>
+        <div class="orbit-circle grey"
+            style="width: 70px; height: 70px; top: 70%; left: 30%; --orbit-radius: 220px; animation-duration: 15s;">
+        </div>
+        <div class="orbit-circle grey"
+            style="width: 120px; height: 120px; top: 50%; left: 20%; --orbit-radius: 190px; animation-duration: 22s;">
+        </div>
+        <div class="orbit-circle grey"
+            style="width: 60px; height: 60px; top: 25%; left: 65%; --orbit-radius: 270px; animation-duration: 14s;">
+        </div>
+        <div class="orbit-circle grey"
+            style="width: 140px; height: 140px; top: 85%; left: 55%; --orbit-radius: 130px; animation-duration: 28s;">
+        </div>
+        <!-- Additional circles to enrich background -->
+        <div class="orbit-circle red"
+            style="width: 200px; height: 200px; top: 10%; left: 45%; --orbit-radius: 320px; animation-duration: 45s;">
+        </div>
+        <div class="orbit-circle grey"
+            style="width: 80px; height: 80px; top: 45%; left: 80%; --orbit-radius: 210px; animation-duration: 19s;">
+        </div>
+    </div>
+
+    <!-- Main glassmorphism content -->
+    <div class="content-wrapper">
+        <div class="container">
+            <h1>SSC CGL Complete Topic Index</h1>
+            <div class="note">
+                <strong>📌 How to use:</strong> Click any topic to open its detailed notes file. Make sure each file
+                exists in the same folder as this index, with the exact name shown in the link (e.g.,
+                <code>number-system.html</code>, <code>percentage.html</code>). You can create these files later with
+                your own content.
+            </div>
+
+            <!-- Quantitative Aptitude Section -->
+            <div class="section">
+                <h2>📐 Quantitative Aptitude</h2>
+                <ul class="topic-grid">
+                    <li class="topic-item"><a href="number-system.html">Number System</a></li>
+                    <li class="topic-item"><a href="lcm-hcf.html">LCM and HCF</a></li>
+                    <li class="topic-item"><a href="simplification.html">Simplification</a></li>
+                    <li class="topic-item"><a href="approximation.html">Approximation</a></li>
+                    <li class="topic-item"><a href="percentage.html">Percentage</a></li>
+                    <li class="topic-item"><a href="profit-loss.html">Profit and Loss</a></li>
+                    <li class="topic-item"><a href="discount.html">Discount</a></li>
+                    <li class="topic-item"><a href="simple-interest.html">Simple Interest</a></li>
+                    <li class="topic-item"><a href="compound-interest.html">Compound Interest</a></li>
+                    <li class="topic-item"><a href="ratio-proportion.html">Ratio and Proportion</a></li>
+                    <li class="topic-item"><a href="partnership.html">Partnership</a></li>
+                    <li class="topic-item"><a href="mixture-alligation.html">Mixture and Alligation</a></li>
+                    <li class="topic-item"><a href="average.html">Average</a></li>
+                    <li class="topic-item"><a href="time-work.html">Time and Work</a></li>
+                    <li class="topic-item"><a href="pipes-cisterns.html">Pipes and Cisterns</a></li>
+                    <li class="topic-item"><a href="time-speed-distance.html">Time, Speed and Distance</a></li>
+                    <li class="topic-item"><a href="boats-streams.html">Boats and Streams</a></li>
+                    <li class="topic-item"><a href="problems-on-trains.html">Problems on Trains</a></li>
+                    <li class="topic-item"><a href="algebra.html">Algebra</a></li>
+                    <li class="topic-item"><a href="linear-equations.html">Linear Equations</a></li>
+                    <li class="topic-item"><a href="quadratic-equations.html">Quadratic Equations</a></li>
+                    <li class="topic-item"><a href="inequalities.html">Inequalities</a></li>
+                    <li class="topic-item"><a href="geometry.html">Geometry</a></li>
+                    <li class="topic-item"><a href="mensuration-2d.html">Mensuration 2D</a></li>
+                    <li class="topic-item"><a href="mensuration-3d.html">Mensuration 3D</a></li>
+                    <li class="topic-item"><a href="trigonometry.html">Trigonometry</a></li>
+                    <li class="topic-item"><a href="heights-distances.html">Heights and Distances</a></li>
+                    <li class="topic-item"><a href="data-interpretation.html">Data Interpretation</a></li>
+                    <li class="topic-item"><a href="probability.html">Probability</a></li>
+                    <li class="topic-item"><a href="permutation-combination.html">Permutation and Combination</a></li>
+                </ul>
+            </div>
+
+            <!-- Reasoning Section -->
+            <div class="section">
+                <h2>🧠 Reasoning</h2>
+                <ul class="topic-grid">
+                    <li class="topic-item"><a href="analogy.html">Analogy</a></li>
+                    <li class="topic-item"><a href="classification.html">Classification</a></li>
+                    <li class="topic-item"><a href="series-number.html">Series - Number</a></li>
+                    <li class="topic-item"><a href="series-letter.html">Series - Letter</a></li>
+                    <li class="topic-item"><a href="series-alphanumeric.html">Series - Alphanumeric</a></li>
+                    <li class="topic-item"><a href="coding-decoding.html">Coding-Decoding</a></li>
+                    <li class="topic-item"><a href="blood-relations.html">Blood Relations</a></li>
+                    <li class="topic-item"><a href="direction-sense.html">Direction Sense</a></li>
+                    <li class="topic-item"><a href="ranking-order.html">Ranking and Order</a></li>
+                    <li class="topic-item"><a href="alphabet-test.html">Alphabet Test</a></li>
+                    <li class="topic-item"><a href="word-formation.html">Word Formation</a></li>
+                    <li class="topic-item"><a href="syllogism.html">Syllogism</a></li>
+                    <li class="topic-item"><a href="statement-assumptions.html">Statement and Assumptions</a></li>
+                    <li class="topic-item"><a href="statement-conclusions.html">Statement and Conclusions</a></li>
+                    <li class="topic-item"><a href="statement-arguments.html">Statement and Arguments</a></li>
+                    <li class="topic-item"><a href="cause-effect.html">Cause and Effect</a></li>
+                    <li class="topic-item"><a href="input-output.html">Input-Output</a></li>
+                    <li class="topic-item"><a href="puzzles.html">Puzzles</a></li>
+                    <li class="topic-item"><a href="seating-arrangement.html">Seating Arrangement</a></li>
+                    <li class="topic-item"><a href="figure-series.html">Figure Series</a></li>
+                    <li class="topic-item"><a href="mirror-images.html">Mirror Images</a></li>
+                    <li class="topic-item"><a href="water-images.html">Water Images</a></li>
+                    <li class="topic-item"><a href="paper-folding.html">Paper Folding/Cutting</a></li>
+                    <li class="topic-item"><a href="embedded-figures.html">Embedded Figures</a></li>
+                    <li class="topic-item"><a href="completion-of-pattern.html">Completion of Pattern</a></li>
+                </ul>
+            </div>
+
+            <!-- English Section -->
+            <div class="section">
+                <h2>📖 English</h2>
+                <ul class="topic-grid">
+                    <li class="topic-item"><a href="tenses.html">Tenses</a></li>
+                    <li class="topic-item"><a href="articles.html">Articles</a></li>
+                    <li class="topic-item"><a href="prepositions.html">Prepositions</a></li>
+                    <li class="topic-item"><a href="conjunctions.html">Conjunctions</a></li>
+                    <li class="topic-item"><a href="subject-verb-agreement.html">Subject-Verb Agreement</a></li>
+                    <li class="topic-item"><a href="modals.html">Modals</a></li>
+                    <li class="topic-item"><a href="conditionals.html">Conditionals</a></li>
+                    <li class="topic-item"><a href="synonyms.html">Synonyms</a></li>
+                    <li class="topic-item"><a href="antonyms.html">Antonyms</a></li>
+                    <li class="topic-item"><a href="homonyms.html">Homonyms</a></li>
+                    <li class="topic-item"><a href="one-word-substitution.html">One-Word Substitution</a></li>
+                    <li class="topic-item"><a href="idioms-phrases.html">Idioms and Phrases</a></li>
+                    <li class="topic-item"><a href="spelling-errors.html">Spelling Errors</a></li>
+                    <li class="topic-item"><a href="reading-comprehension.html">Reading Comprehension</a></li>
+                    <li class="topic-item"><a href="cloze-test.html">Cloze Test</a></li>
+                    <li class="topic-item"><a href="para-jumbles.html">Para Jumbles</a></li>
+                    <li class="topic-item"><a href="sentence-rearrangement.html">Sentence Rearrangement</a></li>
+                    <li class="topic-item"><a href="sentence-improvement.html">Sentence Improvement</a></li>
+                    <li class="topic-item"><a href="error-spotting.html">Error Spotting</a></li>
+                    <li class="topic-item"><a href="fill-in-the-blanks.html">Fill in the Blanks</a></li>
+                    <li class="topic-item"><a href="active-passive.html">Active and Passive Voice</a></li>
+                    <li class="topic-item"><a href="direct-indirect.html">Direct and Indirect Speech</a></li>
+                </ul>
+            </div>
+
+            <!-- General Awareness Section -->
+            <div class="section">
+                <h2>🌍 General Awareness</h2>
+                <ul class="topic-grid">
+                    <li class="topic-item"><a href="history-ancient.html">History - Ancient India</a></li>
+                    <li class="topic-item"><a href="history-medieval.html">History - Medieval India</a></li>
+                    <li class="topic-item"><a href="history-modern.html">History - Modern India</a></li>
+                    <li class="topic-item"><a href="geography-physical.html">Geography - Physical</a></li>
+                    <li class="topic-item"><a href="geography-indian.html">Geography - Indian</a></li>
+                    <li class="topic-item"><a href="geography-world.html">Geography - World</a></li>
+                    <li class="topic-item"><a href="polity-constitution.html">Polity - Constitution</a></li>
+                    <li class="topic-item"><a href="polity-parliament.html">Polity - Parliament</a></li>
+                    <li class="topic-item"><a href="polity-judiciary.html">Polity - Judiciary</a></li>
+                    <li class="topic-item"><a href="polity-executive.html">Polity - Executive</a></li>
+                    <li class="topic-item"><a href="polity-fundamental-rights.html">Polity - Fundamental Rights</a></li>
+                    <li class="topic-item"><a href="economics-basics.html">Economics - Basic Concepts</a></li>
+                    <li class="topic-item"><a href="economics-indian.html">Economics - Indian Economy</a></li>
+                    <li class="topic-item"><a href="economics-budget.html">Economics - Budget</a></li>
+                    <li class="topic-item"><a href="economics-plans.html">Economics - Five-Year Plans</a></li>
+                    <li class="topic-item"><a href="science-physics.html">Science - Physics</a></li>
+                    <li class="topic-item"><a href="science-chemistry.html">Science - Chemistry</a></li>
+                    <li class="topic-item"><a href="science-biology.html">Science - Biology</a></li>
+                    <li class="topic-item"><a href="current-affairs-national.html">Current Affairs - National</a></li>
+                    <li class="topic-item"><a href="current-affairs-international.html">Current Affairs -
+                            International</a></li>
+                    <li class="topic-item"><a href="current-affairs-sports.html">Current Affairs - Sports</a></li>
+                    <li class="topic-item"><a href="current-affairs-awards.html">Current Affairs - Awards & Honors</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

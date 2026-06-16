@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testara — Free Multiplayer Exam Prep Platform</title>
+    <meta name="description"
+        content="Testara is a free, open-source exam preparation platform with multiplayer rooms, AI question generation, and real-time leaderboards. Practice SSC CGL, CHSL, IBPS PO, RRB NTPC and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a1a0a;
+            --grid: rgba(34, 197, 94, 0.08);
+            --grid-bold: rgba(34, 197, 94, 0.15);
+            --accent: #22c55e;
+            --accent-dim: rgba(34, 197, 94, 0.15);
+            --accent-glow: rgba(34, 197, 94, 0.3);
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --card-bg: rgba(15, 30, 15, 0.7);
+            --card-border: rgba(34, 197, 94, 0.12);
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ── PRELOADER ─────────────────────────────────────────────── */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        #preloader.done {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .preloader-formulas {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .formula-float {
+            position: absolute;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            opacity: 0;
+            font-size: clamp(0.7rem, 1.5vw, 1.1rem);
+            white-space: nowrap;
+            animation: formulaFadeFloat 3s ease forwards;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        @keyframes formulaFadeFloat {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.9);
+            }
+
+            20% {
+                opacity: 0.7;
+            }
+
+            80% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-40px) scale(1.05);
+            }
+        }
+
+        .preloader-logo {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(34, 197, 94, 0.15);
+            z-index: 1;
+            animation: logoGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from {
+                text-shadow: 0 0 30px var(--accent-glow);
+            }
+
+            to {
+                text-shadow: 0 0 60px var(--accent-glow), 0 0 100px rgba(34, 197, 94, 0.1);
+            }
+        }
+
+        .preloader-tagline {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 1rem;
+            z-index: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--accent);
+            animation: typewriter 2s steps(30) 0.5s forwards, blinkCursor 0.6s infinite;
+            width: 0;
+        }
+
+        @keyframes typewriter {
+            to {
+                width: 22ch;
+            }
+        }
+
+        @keyframes blinkCursor {
+            50% {
+                border-color: transparent;
+            }
+        }
+
+        /* ── GRAPH PAPER BACKGROUND ────────────────────────────────── */
+        .graph-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+                linear-gradient(var(--grid-bold) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-bold) 1px, transparent 1px);
+            background-size:
+                20px 20px,
+                20px 20px,
+                100px 100px,
+                100px 100px;
+            background-position: -1px -1px;
+        }
+
+        .graph-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.06) 0%, transparent 60%);
+        }
+
+        /* ── FLOATING FORMULAS (background) ────────────────────────── */
+        .bg-formulas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-formula {
+            position: absolute;
+            font-family: var(--font-mono);
+            color: rgba(34, 197, 94, 0.06);
+            font-size: clamp(0.8rem, 2vw, 1.4rem);
+            white-space: nowrap;
+            animation: bgFloat 25s linear infinite;
+        }
+
+        @keyframes bgFloat {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(5deg);
+                opacity: 0;
+            }
+        }
+
+        /* ── MAIN CONTENT ──────────────────────────────────────────── */
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ── NAV ───────────────────────────────────────────────────── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 26, 10, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .nav-logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .nav-cta {
+            background: var(--accent) !important;
+            color: #000 !important;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600 !important;
+            transition: transform 0.2s, box-shadow 0.2s !important;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        /* ── HERO ──────────────────────────────────────────────────── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            background: var(--accent-dim);
+            margin-bottom: 2rem;
+            animation: fadeUp 0.8s ease;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 7vw, 5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            max-width: 900px;
+            animation: fadeUp 0.8s ease 0.1s both;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #22c55e, #4ade80, #86efac);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-dim);
+            max-width: 600px;
+            margin-top: 1.5rem;
+            animation: fadeUp 0.8s ease 0.2s both;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2.5rem;
+            animation: fadeUp 0.8s ease 0.3s both;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 4px 30px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--accent-glow);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .hero-preview {
+            margin-top: 4rem;
+            max-width: 900px;
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            padding: 1.5rem;
+            animation: fadeUp 0.8s ease 0.4s both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-bar {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .preview-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .preview-dot:nth-child(1) {
+            background: #ef4444;
+        }
+
+        .preview-dot:nth-child(2) {
+            background: #f59e0b;
+        }
+
+        .preview-dot:nth-child(3) {
+            background: #22c55e;
+        }
+
+        .preview-mockup {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-align: left;
+            line-height: 1.8;
+        }
+
+        .preview-mockup .dim {
+            color: var(--text-dim);
+        }
+
+        .preview-mockup .bright {
+            color: #4ade80;
+        }
+
+        .preview-mockup .yellow {
+            color: #fbbf24;
+        }
+
+        .preview-mockup .blue {
+            color: #60a5fa;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── SECTIONS ──────────────────────────────────────────────── */
+        section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            color: var(--text-dim);
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin-bottom: 3rem;
+        }
+
+        /* ── FEATURES ──────────────────────────────────────────────── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, var(--accent-dim), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .feature-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .feature-card p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        /* ── HOW IT WORKS ──────────────────────────────────────────── */
+        .steps-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 2rem;
+            counter-reset: step;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            counter-increment: step;
+            position: relative;
+        }
+
+        .step-card::before {
+            content: counter(step);
+            position: absolute;
+            top: -1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            color: #000;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 50%;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .step-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .step-card p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        /* ── EXAMS ─────────────────────────────────────────────────── */
+        .exams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .exam-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: all 0.25s ease;
+        }
+
+        .exam-badge:hover {
+            border-color: var(--accent);
+            transform: scale(1.03);
+        }
+
+        .exam-badge h4 {
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .exam-badge .exam-meta {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .exam-badge .exam-marking {
+            display: inline-block;
+            margin-top: 0.4rem;
+            padding: 0.15rem 0.5rem;
+            background: var(--accent-dim);
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--accent);
+        }
+
+        /* ── FORMULA STRIP ─────────────────────────────────────────── */
+        .formula-strip {
+            padding: 1.5rem 0;
+            overflow: hidden;
+            position: relative;
+            border-top: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+            margin: 2rem 0;
+        }
+
+        .formula-track {
+            display: flex;
+            gap: 4rem;
+            animation: scrollTrack 30s linear infinite;
+            width: max-content;
+        }
+
+        .formula-track span {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: rgba(34, 197, 94, 0.3);
+            white-space: nowrap;
+        }
+
+        @keyframes scrollTrack {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* ── INSTALLATION TUTORIAL ──────────────────────────────────── */
+        .install-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .install-step {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            position: relative;
+        }
+
+        .install-step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .install-step-num {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            color: #000;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .install-step-title {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .install-step p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .terminal-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .terminal-block code {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent);
+            display: block;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        .terminal-block .cmd-comment {
+            color: var(--text-dim);
+        }
+
+        .terminal-block .cmd-prompt {
+            color: #4ade80;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .prereq-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .prereq-badge {
+            padding: 0.3rem 0.75rem;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: #93c5fd;
+        }
+
+        .prereq-badge a {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        .install-note {
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.15);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            color: #fbbf24;
+            margin-top: 1rem;
+        }
+
+        /* ── CTA SECTION ───────────────────────────────────────────── */
+        .cta-section {
+            text-align: center;
+            padding: 8rem 2rem;
+        }
+
+        .cta-section h2 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* ── FOOTER ────────────────────────────────────────────────── */
+        footer {
+            border-top: 1px solid var(--card-border);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            padding: 0.3rem 0.75rem;
+            background: var(--accent-dim);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--accent);
+        }
+
+        /* ── RESPONSIVE ────────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            nav {
+                padding: 0.75rem 1rem;
+            }
+
+            .nav-links a:not(.nav-cta) {
+                display: none;
+            }
+
+            section {
+                padding: 4rem 1.25rem;
+            }
+
+            .feature-card {
+                padding: 1.5rem;
+            }
+        }
+
+        /* ── SCROLL ANIMATIONS ─────────────────────────────────────── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PRELOADER -->
+    <div id="preloader">
+        <div class="preloader-formulas" id="preloaderFormulas"></div>
+        <div class="preloader-logo">Testara</div>
+        <div class="preloader-tagline">loading your exams...</div>
+    </div>
+
+    <!-- GRAPH PAPER BG -->
+    <div class="graph-bg"></div>
+
+    <!-- FLOATING FORMULAS BG -->
+    <div class="bg-formulas" id="bgFormulas"></div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <!-- NAV -->
+        <nav>
+            <a href="#" class="nav-logo">⬡ Testara</a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how">How It Works</a>
+                <a href="#install">Install</a>
+                <a href="#exams">Exams</a>
+                <a href="https://github.com/praveen-2528/mockify" class="nav-cta" target="_blank">⬇ Download Free</a>
+            </div>
+        </nav>
+
+        <!-- HERO -->
+        <section class="hero">
+            <div class="hero-badge">✦ 100% Free & Open-Source</div>
+            <h1>Ace Your Exams.<br><span class="highlight">Together.</span></h1>
+            <p>The free multiplayer exam preparation platform. Practice with friends in real-time, generate questions
+                with AI, track your progress on live leaderboards.</p>
+            <div class="hero-actions">
+                <a href="https://github.com/praveen-2528/mockify" class="btn btn-primary" target="_blank">⬇ Download
+                    from GitHub</a>
+                <a href="#how" class="btn btn-outline">See How It Works →</a>
+            </div>
+
+            <div class="hero-preview">
+                <div class="preview-bar">
+                    <div class="preview-dot"></div>
+                    <div class="preview-dot"></div>
+                    <div class="preview-dot"></div>
+                </div>
+                <div class="preview-mockup">
+                    <span class="dim">$</span> <span class="bright">testara</span> <span class="dim">v2.0 —
+                        ready</span><br>
+                    <span class="dim">├──</span> <span class="yellow">7 exam types</span> <span class="dim">loaded (SSC
+                        CGL, CHSL, IBPS PO...)</span><br>
+                    <span class="dim">├──</span> <span class="blue">multiplayer</span> <span class="dim">rooms: friendly
+                        / exam mode</span><br>
+                    <span class="dim">├──</span> <span class="bright">AI question gen</span> <span class="dim">via
+                        DeepSeek / ChatGPT / Gemini</span><br>
+                    <span class="dim">├──</span> <span class="yellow">real-time chat</span> <span class="dim">+
+                        leaderboard + friends</span><br>
+                    <span class="dim">└──</span> <span class="bright">ready</span> <span class="dim">→
+                        http://localhost:5173</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- FORMULA STRIP -->
+        <div class="formula-strip">
+            <div class="formula-track">
+                <span>E = mc²</span>
+                <span>∫₀¹ x² dx = 1/3</span>
+                <span>a² + b² = c²</span>
+                <span>F = ma</span>
+                <span>sin²θ + cos²θ = 1</span>
+                <span>PV = nRT</span>
+                <span>ΔG = ΔH − TΔS</span>
+                <span>V = IR</span>
+                <span>∑F = 0</span>
+                <span>d/dx(eˣ) = eˣ</span>
+                <span>S = ut + ½at²</span>
+                <span>CI = P(1+r/n)ⁿᵗ − P</span>
+                <span>Speed = Distance/Time</span>
+                <span>Profit% = (Profit/CP)×100</span>
+                <!-- duplicate for seamless scroll -->
+                <span>E = mc²</span>
+                <span>∫₀¹ x² dx = 1/3</span>
+                <span>a² + b² = c²</span>
+                <span>F = ma</span>
+                <span>sin²θ + cos²θ = 1</span>
+                <span>PV = nRT</span>
+                <span>ΔG = ΔH − TΔS</span>
+                <span>V = IR</span>
+                <span>∑F = 0</span>
+                <span>d/dx(eˣ) = eˣ</span>
+                <span>S = ut + ½at²</span>
+                <span>CI = P(1+r/n)ⁿᵗ − P</span>
+                <span>Speed = Distance/Time</span>
+                <span>Profit% = (Profit/CP)×100</span>
+            </div>
+        </div>
+
+        <!-- FEATURES -->
+        <section id="features">
+            <div class="section-label reveal">// features</div>
+            <h2 class="section-title reveal">Everything you need to crack it</h2>
+            <p class="section-subtitle reveal">Built by aspirants, for aspirants. No subscriptions, no limits.</p>
+
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🎮</div>
+                    <h3>Multiplayer Rooms</h3>
+                    <p>Create rooms and practice with friends in real-time. Two modes — Friendly (everyone answers
+                        together) and Exam (independent timed test).</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI Question Generation</h3>
+                    <p>Generate unlimited questions using free AI tools like ChatGPT, DeepSeek, or Gemini. Just copy the
+                        prompt, paste the output.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Live Leaderboards</h3>
+                    <p>See everyone's scores in real-time. Click any player to view their full answer breakdown, time
+                        heatmap, and explanations.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">👥</div>
+                    <h3>Friends & Stats</h3>
+                    <p>Add friends, track their progress, compare scores. See who's putting in the most effort and who's
+                        improving fastest.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">📊</div>
+                    <h3>Deep Analytics</h3>
+                    <p>Dashboard with topic-wise breakdown, time heatmaps, accuracy trends. Know exactly where to focus
+                        your preparation.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">💬</div>
+                    <h3>In-Exam Chat</h3>
+                    <p>Chat with roommates during friendly mode. Popup messages, animations, and a sleek top-positioned
+                        chat bar.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section id="how">
+            <div class="section-label reveal">// how_it_works</div>
+            <h2 class="section-title reveal">Up and running in 3 steps</h2>
+            <p class="section-subtitle reveal">No cloud, no accounts required. Everything runs on your machine.</p>
+
+            <div class="steps-row">
+                <div class="step-card reveal">
+                    <h3>Download & Run</h3>
+                    <p>Clone the repo, run <code>npm install</code> and <code>npm run dev:full</code>. That's it —
+                        server + client start together.</p>
+                </div>
+                <div class="step-card reveal">
+                    <h3>Load Questions</h3>
+                    <p>Use AI Prompt Generator to create questions, paste CSV, import from Question Bank, or use
+                        pre-built mock tests.</p>
+                </div>
+                <div class="step-card reveal">
+                    <h3>Start Practicing</h3>
+                    <p>Go solo or create a multiplayer room. Share the code with friends. Real-time scores,
+                        explanations, and analytics await.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- INSTALLATION TUTORIAL -->
+        <section id="install">
+            <div class="section-label reveal">// installation_guide</div>
+            <h2 class="section-title reveal">Step-by-step setup</h2>
+            <p class="section-subtitle reveal">Get Testara running on your computer in under 5 minutes. No coding
+                knowledge required.</p>
+
+            <div class="install-steps">
+                <!-- Step 0: Prerequisites -->
+                <div class="install-step reveal">
+                    <div class="install-step-header">
+                        <div class="install-step-num">0</div>
+                        <div class="install-step-title">Prerequisites</div>
+                    </div>
+                    <p>Make sure you have these installed on your computer before starting:</p>
+                    <div class="prereq-badges">
+                        <span class="prereq-badge">📦 <a href="https://nodejs.org" target="_blank">Node.js
+                                v18+</a></span>
+                        <span class="prereq-badge">🔀 <a href="https://git-scm.com" target="_blank">Git</a></span>
+                    </div>
+                    <p>Download Node.js from <a href="https://nodejs.org" target="_blank"
+                            style="color:var(--accent)">nodejs.org</a> (LTS version recommended). Git comes
+                        pre-installed on Mac/Linux; Windows users can get it from <a href="https://git-scm.com"
+                            target="_blank" style="color:var(--accent)">git-scm.com</a>.</p>
+                    <div class="terminal-block">
+                        <button class="copy-btn"
+                            onclick="copyCmd(this, 'node -v && npm -v && git --version')">Copy</button>
+                        <code><span class="cmd-comment"># Verify installations:</span>
+<span class="cmd-prompt">$</span> node -v      <span class="cmd-comment"># Should show v18+ or v20+</span>
+<span class="cmd-prompt">$</span> npm -v       <span class="cmd-comment"># Should show 9+ or 10+</span>
+<span class="cmd-prompt">$</span> git --version <span class="cmd-comment"># Should show git version 2.x</span></code>
+                    </div>
+                </div>
+
+                <!-- Step 1: Clone -->
+                <div class="install-step reveal">
+                    <div class="install-step-header">
+                        <div class="install-step-num">1</div>
+                        <div class="install-step-title">Clone the Repository</div>
+                    </div>
+                    <p>Open a terminal (Command Prompt / PowerShell on Windows, Terminal on Mac/Linux) and run:</p>
+                    <div class="terminal-block">
+                        <button class="copy-btn"
+                            onclick="copyCmd(this, 'git clone https://github.com/praveen-2528/mockify.git')">Copy</button>
+                        <code><span class="cmd-prompt">$</span> git clone https://github.com/praveen-2528/mockify.git
+<span class="cmd-prompt">$</span> cd testara</code>
+                    </div>
+                </div>
+
+                <!-- Step 2: Install -->
+                <div class="install-step reveal">
+                    <div class="install-step-header">
+                        <div class="install-step-num">2</div>
+                        <div class="install-step-title">Install Dependencies</div>
+                    </div>
+                    <p>This downloads all required packages (React, Socket.IO, SQLite, etc). Takes about 30-60 seconds:
+                    </p>
+                    <div class="terminal-block">
+                        <button class="copy-btn" onclick="copyCmd(this, 'npm install')">Copy</button>
+                        <code><span class="cmd-prompt">$</span> npm install
+<span class="cmd-comment"># Wait for it to finish... you'll see "added XXX packages"</span></code>
+                    </div>
+                </div>
+
+                <!-- Step 3: Run -->
+                <div class="install-step reveal">
+                    <div class="install-step-header">
+                        <div class="install-step-num">3</div>
+                        <div class="install-step-title">Start Testara</div>
+                    </div>
+                    <p>This single command starts both the backend server and the frontend app together:</p>
+                    <div class="terminal-block">
+                        <button class="copy-btn" onclick="copyCmd(this, 'npm run dev:full')">Copy</button>
+                        <code><span class="cmd-prompt">$</span> npm run dev:full
+
+<span class="cmd-comment"># ✅ Server running on http://localhost:3001</span>
+<span class="cmd-comment"># ✅ Frontend running on http://localhost:5173</span></code>
+                    </div>
+                </div>
+
+                <!-- Step 4: Open -->
+                <div class="install-step reveal">
+                    <div class="install-step-header">
+                        <div class="install-step-num">4</div>
+                        <div class="install-step-title">Open in Browser</div>
+                    </div>
+                    <p>Your browser should open automatically. If not, go to:</p>
+                    <div class="terminal-block">
+                        <button class="copy-btn" onclick="copyCmd(this, 'http://localhost:5173')">Copy</button>
+                        <code><span class="cmd-prompt">→</span> <a href="http://localhost:5173" style="color:#4ade80;text-decoration:none">http://localhost:5173</a></code>
+                    </div>
+                    <p style="margin-top:0.75rem">Create an account (stored locally), pick an exam type, and start
+                        practicing! 🎉</p>
+                </div>
+
+                <!-- Step 5: Multiplayer -->
+                <div class="install-step reveal">
+                    <div class="install-step-header">
+                        <div class="install-step-num">5</div>
+                        <div class="install-step-title">Invite Friends (Multiplayer)</div>
+                    </div>
+                    <p>For multiplayer on the same WiFi network, share your local IP. Friends open it in their browser —
+                        no install needed on their end!</p>
+                    <div class="terminal-block">
+                        <code><span class="cmd-comment"># Your friends open this in their browser:</span>
+<span class="cmd-prompt">→</span> http://192.168.x.x:5173
+
+<span class="cmd-comment"># For internet play, use the built-in tunnel feature</span>
+<span class="cmd-comment"># in the Multiplayer lobby → "Enable Internet Access"</span></code>
+                    </div>
+                    <div class="install-note">💡 <strong>Tip:</strong> Only the host needs to install Testara. Friends
+                        just need a browser and the room code!</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXAMS -->
+        <section id="exams">
+            <div class="section-label reveal">// supported_exams</div>
+            <h2 class="section-title reveal">7 exam patterns. Accurate marking.</h2>
+            <p class="section-subtitle reveal">Each template follows the official exam syllabus, sections, and marking
+                scheme.</p>
+
+            <div class="exams-grid">
+                <div class="exam-badge reveal">
+                    <h4>SSC CGL Tier-1</h4>
+                    <div class="exam-meta">100 Qs · 60 min · 4 sections</div>
+                    <div class="exam-marking">+2 / −0.50</div>
+                </div>
+                <div class="exam-badge reveal">
+                    <h4>SSC CGL Tier-2</h4>
+                    <div class="exam-meta">150 Qs · 150 min · 5 sections</div>
+                    <div class="exam-marking">+3 / −1</div>
+                </div>
+                <div class="exam-badge reveal">
+                    <h4>SSC CHSL Tier-1</h4>
+                    <div class="exam-meta">100 Qs · 60 min · 4 sections</div>
+                    <div class="exam-marking">+2 / −0.50</div>
+                </div>
+                <div class="exam-badge reveal">
+                    <h4>SSC CHSL Tier-2</h4>
+                    <div class="exam-meta">135 Qs · 150 min · 5 sections</div>
+                    <div class="exam-marking">+3 / −1</div>
+                </div>
+                <div class="exam-badge reveal">
+                    <h4>SSC Steno C & D</h4>
+                    <div class="exam-meta">200 Qs · 120 min · 3 sections</div>
+                    <div class="exam-marking">+1 / −0.25</div>
+                </div>
+                <div class="exam-badge reveal">
+                    <h4>IBPS PO Prelims</h4>
+                    <div class="exam-meta">100 Qs · 60 min · 3 sections</div>
+                    <div class="exam-marking">+1 / −0.25</div>
+                </div>
+                <div class="exam-badge reveal">
+                    <h4>RRB NTPC CBT-1</h4>
+                    <div class="exam-meta">100 Qs · 90 min · 3 sections</div>
+                    <div class="exam-marking">+1 / −0.33</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <h2 class="reveal">Ready to <span style="color:var(--accent)">level up</span> your prep?</h2>
+            <p class="reveal">It's free. It's open-source. It runs offline. What are you waiting for?</p>
+            <div class="reveal">
+                <a href="https://github.com/praveen-2528/mockify" class="btn btn-primary" target="_blank"
+                    style="font-size:1.15rem; padding: 1rem 2.5rem;">⬇ Download Testara — It's Free</a>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>Built with ❤️ by <a href="https://github.com/praveen-2528" target="_blank">praveen-2528</a> · <a
+                    href="https://github.com/praveen-2528/mockify" target="_blank">GitHub</a>
+            </p>
+            <div class="tech-stack">
+                <span class="tech-badge">React</span>
+                <span class="tech-badge">Node.js</span>
+                <span class="tech-badge">Socket.IO</span>
+                <span class="tech-badge">SQLite</span>
+                <span class="tech-badge">Vite</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // ── Preloader Formulas ───────────────────────────────────────
+        const formulas = [
+            'E = mc²', 'a² + b² = c²', 'F = ma', 'sin²θ + cos²θ = 1',
+            'PV = nRT', 'V = IR', 'ΔG = ΔH − TΔS', 'd/dx(eˣ) = eˣ',
+            'S = ut + ½at²', '∫₀¹ x² dx = ⅓', 'CI = P(1+r)ⁿ − P',
+            'λ = h/mv', '∑F = 0', 'W = F·d·cosθ', 'KE = ½mv²',
+            'Profit% = (P/CP)×100', 'Speed = D/T', 'SI = PNR/100',
+            'Area = πr²', 'C = 2πr', 'tan θ = sin/cos', 'log(ab) = log a + log b',
+            'pH = −log[H⁺]', 'n! = n×(n−1)!', 'ⁿCᵣ = n!/r!(n−r)!',
+        ];
+
+        const preloaderContainer = document.getElementById('preloaderFormulas');
+        let formulaIndex = 0;
+
+        function spawnPreloaderFormula() {
+            if (formulaIndex >= 30) return;
+            const el = document.createElement('div');
+            el.className = 'formula-float';
+            el.textContent = formulas[Math.floor(Math.random() * formulas.length)];
+            el.style.left = Math.random() * 90 + '%';
+            el.style.top = Math.random() * 80 + 10 + '%';
+            el.style.animationDelay = (Math.random() * 0.5) + 's';
+            el.style.animationDuration = (2 + Math.random() * 2) + 's';
+            preloaderContainer.appendChild(el);
+            formulaIndex++;
+        }
+
+        // Spawn formulas rapidly during loading
+        const formulaInterval = setInterval(spawnPreloaderFormula, 100);
+
+        // Dismiss preloader after 2.8s
+        setTimeout(() => {
+            clearInterval(formulaInterval);
+            document.getElementById('preloader').classList.add('done');
+        }, 2800);
+
+        // ── Background Floating Formulas ─────────────────────────────
+        const bgContainer = document.getElementById('bgFormulas');
+        function spawnBgFormula() {
+            const el = document.createElement('div');
+            el.className = 'bg-formula';
+            el.textContent = formulas[Math.floor(Math.random() * formulas.length)];
+            el.style.left = Math.random() * 95 + '%';
+            el.style.animationDuration = (20 + Math.random() * 15) + 's';
+            el.style.animationDelay = (Math.random() * 10) + 's';
+            bgContainer.appendChild(el);
+            // Clean up after animation
+            el.addEventListener('animationend', () => el.remove());
+        }
+        // Spawn a few on load, then continuously
+        for (let i = 0; i < 8; i++) spawnBgFormula();
+        setInterval(spawnBgFormula, 4000);
+
+        // ── Copy command helper ─────────────────────────────────────
+        function copyCmd(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+            });
+        }
+
+        // ── Scroll Reveal ────────────────────────────────────────────
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+
+</body>
+
+</html>
