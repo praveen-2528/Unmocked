@@ -1,0 +1,239 @@
+/* ── Floating Writing Pad ─────────────────────────────────────────── */
+.writing-pad.floating {
+    display: flex;
+    flex-direction: column;
+    background: #0d1117;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    transition: box-shadow 0.2s ease;
+}
+
+.writing-pad.floating:hover {
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(99,102,241,0.3);
+}
+
+.writing-pad.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    border-radius: 0;
+}
+
+/* ── Drag Handle ──────────────────────────────────────────────────── */
+.wp-drag-handle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.wp-drag-handle:active {
+    cursor: grabbing;
+}
+
+.wp-drag-title {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #a5b4fc;
+    flex: 1;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────── */
+.wp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.wp-tools-left, .wp-tools-right {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.wp-tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, #94a3b8);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.wp-tool-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary, #e2e8f0);
+}
+
+.wp-tool-btn.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.4);
+}
+
+.wp-tool-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.wp-separator {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0 0.1rem;
+    flex-shrink: 0;
+}
+
+/* ── Color Picker ─────────────────────────────────────────────────── */
+.wp-color-group { position: relative; }
+
+.wp-color-swatch {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.wp-color-picker {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 3px;
+    padding: 4px 6px;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.wp-color-opt {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.wp-color-opt:hover { transform: scale(1.2); }
+.wp-color-opt.active { border-color: #fff; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); }
+
+/* ── Stroke Size ──────────────────────────────────────────────────── */
+.wp-size-group {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.wp-size-label {
+    font-size: 0.6rem;
+    color: var(--text-secondary, #94a3b8);
+    min-width: 16px;
+    text-align: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Shared Badge ─────────────────────────────────────────────────── */
+.wp-shared-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0.1rem 0.4rem;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 20px;
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: #34d399;
+}
+
+/* ── Canvas Container ─────────────────────────────────────────────── */
+.wp-canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+    background:
+        radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+    background-size: 20px 20px;
+}
+
+.wp-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    touch-action: none;
+}
+
+/* ── Resize Handle ────────────────────────────────────────────────── */
+.wp-resize-handle {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 16px; height: 16px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(99,102,241,0.3) 50%);
+    border-radius: 0 0 12px 0;
+}
+
+.wp-resize-handle:hover {
+    background: linear-gradient(135deg, transparent 40%, rgba(99,102,241,0.5) 40%);
+}
+
+/* ── Toggle Button (for Test.jsx header) ──────────────────────────── */
+.pad-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    color: #a5b4fc;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pad-toggle-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.pad-toggle-btn.active {
+    background: rgba(99, 102, 241, 0.25);
+    border-color: #6366f1;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .wp-toolbar { padding: 0.25rem 0.35rem; }
+    .wp-tool-btn { width: 24px; height: 24px; }
+    .wp-size-group { display: none; }
+    .wp-drag-title { font-size: 0.6rem; }
+}

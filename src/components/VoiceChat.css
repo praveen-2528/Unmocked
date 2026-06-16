@@ -1,0 +1,160 @@
+/* ── Voice Chat Bar ───────────────────────────────────────────────── */
+.vc-join-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.vc-join-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    color: #34d399;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vc-join-btn:hover {
+    background: rgba(16, 185, 129, 0.25);
+    transform: translateY(-1px);
+}
+
+.vc-error {
+    font-size: 0.7rem;
+    color: #f87171;
+}
+
+/* ── Active Voice Bar ─────────────────────────────────────────────── */
+.vc-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+}
+
+.vc-participants {
+    display: flex;
+    align-items: center;
+    gap: -4px;
+}
+
+/* ── Avatar ───────────────────────────────────────────────────────── */
+.vc-avatar {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.2);
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -4px;
+    transition: all 0.2s ease;
+}
+
+.vc-avatar:first-child {
+    margin-left: 0;
+}
+
+.vc-avatar.speaking {
+    border-color: #34d399;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    animation: vcPulse 1s ease infinite;
+}
+
+.vc-avatar.muted {
+    opacity: 0.6;
+}
+
+.vc-avatar-letter {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #a5b4fc;
+}
+
+.vc-muted-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #ef4444;
+    border-radius: 50%;
+    padding: 1px;
+    color: white;
+}
+
+@keyframes vcPulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.3); }
+    50% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.6); }
+}
+
+/* ── Controls ─────────────────────────────────────────────────────── */
+.vc-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.25rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vc-ctrl-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #94a3b8);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.vc-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary, #e2e8f0);
+}
+
+.vc-ctrl-btn.active-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.vc-leave-btn:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .vc-bar {
+        padding: 0.3rem 0.4rem;
+    }
+
+    .vc-avatar {
+        width: 24px;
+        height: 24px;
+    }
+
+    .vc-avatar-letter {
+        font-size: 0.6rem;
+    }
+
+    .vc-ctrl-btn {
+        width: 26px;
+        height: 26px;
+    }
+}
