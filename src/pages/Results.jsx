@@ -12,6 +12,43 @@ import QuestionRenderer from '../components/QuestionRenderer';
 import BadgeIcon from '../components/BadgeSVGs';
 import './Results.css';
 
+// Seating Arrangement Helpers
+const isSeatingArrangement = (q, testFormat) => {
+    if (!q) return false;
+    const isTopicFormat = testFormat === 'topic';
+    const topic = (q.topic || '').toLowerCase();
+    const type = (q.questionType || q.question_type || '').toLowerCase();
+    return isTopicFormat && (topic.includes('seating arrangement') || type === 'seating_arrangement');
+};
+
+const getSeatingArrangementType = (q) => {
+    if (!q) return 'linear';
+    const text = (q.text || '').toLowerCase();
+    const subtopic = (q.subtopic || '').toLowerCase();
+    
+    if (text.includes('circular') || text.includes('circle') || text.includes('round table') || subtopic.includes('circular')) {
+        return 'circular';
+    }
+    if (text.includes('parallel') || text.includes('two rows') || text.includes('facing each other') || subtopic.includes('parallel')) {
+        return 'parallel';
+    }
+    return 'linear';
+};
+
+const getMembersCount = (q) => {
+    if (!q) return 0;
+    if (q.membersCount) return q.membersCount;
+    const correctVal = q.options[q.correctAnswer];
+    if (!correctVal || typeof correctVal !== 'string') return 0;
+    const members = correctVal.split(/[^A-Za-z0-9]+/).filter(Boolean);
+    return members.length;
+};
+
+const normalizeSequence = (str) => {
+    if (typeof str !== 'string') return '';
+    return str.toUpperCase().replace(/[^A-Z0-9]/g, '');
+};
+
 // Simple Confetti component
 const Confetti = () => {
     const particles = useMemo(() => {
@@ -71,6 +108,249 @@ const Results = () => {
     const [activeProfileQuery, setActiveProfileQuery] = useState(null);
 
     const ms = useMemo(() => markingScheme || { correct: 2, incorrect: -0.5, unattempted: 0 }, [markingScheme]);
+    const { testFormat } = useExam();
+
+    const [seatingReattempts, setSeatingReattempts] = useState({});
+
+    const renderSeatingReview = (q, idx) => {
+        const N = getMembersCount(q);
+        const type = getSeatingArrangementType(q);
+        const userAnswer = answers[idx] || '';
+        const isCorrect = isSeatingArrangement(q, testFormat)
+            ? normalizeSequence(userAnswer) === normalizeSequence(q.options[q.correctAnswer])
+            : userAnswer === q.correctAnswer;
+
+        const reattemptVal = seatingReattempts[idx] || '';
+        const finalReattempt = reattempts[idx];
+        const isReattempted = finalReattempt !== undefined;
+
+        const correctSequence = normalizeSequence(q.options[q.correctAnswer]);
+
+        const handleBoxChangeLocal = (i, val) => {
+            const char = val.slice(-1).toUpperCase();
+            const currentVal = seatingReattempts[idx] || '';
+            const arr = [];
+            for (let k = 0; k < N; k++) {
+                if (k === i) arr.push(char || ' ');
+                else arr.push(currentVal[k] || ' ');
+            }
+            const newVal = arr.join('');
+            setSeatingReattempts(prev => ({ ...prev, [idx]: newVal }));
+
+            if (char && char !== ' ' && i < N - 1) {
+                setTimeout(() => {
+                    document.getElementById(`reattempt-box-${idx}-${i + 1}`)?.focus();
+                }, 10);
+            }
+        };
+
+        const handleBoxKeyDownLocal = (i, e) => {
+            if (e.key === 'Backspace') {
+                const currentVal = seatingReattempts[idx] || '';
+                const char = currentVal[i] || ' ';
+                if (char === ' ' || !char) {
+                    if (i > 0) {
+                        setTimeout(() => {
+                            document.getElementById(`reattempt-box-${idx}-${i - 1}`)?.focus();
+                        }, 10);
+                    }
+                }
+            } else if (e.key === 'ArrowLeft' && i > 0) {
+                document.getElementById(`reattempt-box-${idx}-${i - 1}`)?.focus();
+            } else if (e.key === 'ArrowRight' && i < N - 1) {
+                document.getElementById(`reattempt-box-${idx}-${i + 1}`)?.focus();
+            }
+        };
+
+        const renderLinearReview = (seq, isReveal = false, refSeq = null) => {
+            const items = [];
+            for (let i = 0; i < N; i++) {
+                const char = (seq[i] || ' ').trim();
+                let boxClass = "seating-box-input";
+                if (isReveal) {
+                    const matches = char.toUpperCase() === (refSeq?.[i] || '').toUpperCase();
+                    boxClass += matches ? " correct-box" : " incorrect-box";
+                }
+                items.push(
+                    <div key={i} className="seating-box-wrapper">
+                        <span className="seating-box-label">{i + 1}</span>
+                        <input
+                            id={`reattempt-box-${idx}-${i}`}
+                            type="text"
+                            maxLength={1}
+                            className={boxClass}
+                            value={char}
+                            disabled={!reattemptMode || isReattempted || isReveal}
+                            onChange={(e) => handleBoxChangeLocal(i, e.target.value)}
+                            onKeyDown={(e) => handleBoxKeyDownLocal(i, e)}
+                            placeholder="?"
+                        />
+                    </div>
+                );
+            }
+            return <div className="seating-layout-linear">{items}</div>;
+        };
+
+        const renderCircularReview = (seq, isReveal = false, refSeq = null) => {
+            const items = [];
+            const radius = 85;
+            for (let i = 0; i < N; i++) {
+                const char = (seq[i] || ' ').trim();
+                const angle = (i * 2 * Math.PI) / N - Math.PI / 2;
+                const x = Math.round(radius * Math.cos(angle));
+                const y = Math.round(radius * Math.sin(angle));
+
+                let boxClass = "seating-box-input";
+                if (isReveal) {
+                    const matches = char.toUpperCase() === (refSeq?.[i] || '').toUpperCase();
+                    boxClass += matches ? " correct-box" : " incorrect-box";
+                }
+
+                items.push(
+                    <div 
+                        key={i} 
+                        className="seating-box-wrapper"
+                        style={{
+                            position: 'absolute',
+                            left: `calc(50% + ${x}px - 21px)`,
+                            top: `calc(50% + ${y}px - 21px)`,
+                        }}
+                    >
+                        <span className="seating-box-label circular-label">{i + 1}</span>
+                        <input
+                            id={`reattempt-box-${idx}-${i}`}
+                            type="text"
+                            maxLength={1}
+                            className={boxClass}
+                            value={char}
+                            disabled={!reattemptMode || isReattempted || isReveal}
+                            onChange={(e) => handleBoxChangeLocal(i, e.target.value)}
+                            onKeyDown={(e) => handleBoxKeyDownLocal(i, e)}
+                            placeholder="?"
+                            style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}
+                        />
+                    </div>
+                );
+            }
+            return (
+                <div className="seating-layout-circular" style={{ height: '260px' }}>
+                    <div className="seating-circle-table" style={{ width: '200px', height: '200px' }}>
+                        <div className="circle-table-center" style={{ width: '80px', height: '80px', fontSize: '0.65rem' }}>
+                            <span>TABLE</span>
+                        </div>
+                        {items}
+                    </div>
+                </div>
+            );
+        };
+
+        const renderParallelReview = (seq, isReveal = false, refSeq = null) => {
+            const half = Math.ceil(N / 2);
+            const row1 = [];
+            const row2 = [];
+
+            for (let i = 0; i < N; i++) {
+                const char = (seq[i] || ' ').trim();
+                let boxClass = "seating-box-input";
+                if (isReveal) {
+                    const matches = char.toUpperCase() === (refSeq?.[i] || '').toUpperCase();
+                    boxClass += matches ? " correct-box" : " incorrect-box";
+                }
+
+                const element = (
+                    <div key={i} className="seating-box-wrapper">
+                        <span className="seating-box-label">{i + 1}</span>
+                        <input
+                            id={`reattempt-box-${idx}-${i}`}
+                            type="text"
+                            maxLength={1}
+                            className={boxClass}
+                            value={char}
+                            disabled={!reattemptMode || isReattempted || isReveal}
+                            onChange={(e) => handleBoxChangeLocal(i, e.target.value)}
+                            onKeyDown={(e) => handleBoxKeyDownLocal(i, e)}
+                            placeholder="?"
+                        />
+                    </div>
+                );
+
+                if (i < half) row1.push(element);
+                else row2.push(element);
+            }
+
+            return (
+                <div className="seating-layout-parallel">
+                    <div className="parallel-row row-north">
+                        <span className="row-indicator">Row 1 (Facing South)</span>
+                        <div className="parallel-boxes">{row1}</div>
+                    </div>
+                    <div className="parallel-divider" style={{ width: '70%' }}>
+                        <div className="divider-line"></div>
+                    </div>
+                    <div className="parallel-row row-south">
+                        <div className="parallel-boxes">{row2}</div>
+                        <span className="row-indicator">Row 2 (Facing North)</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const renderLayout = (seq, isReveal = false, refSeq = null) => {
+            if (type === 'circular') return renderCircularReview(seq, isReveal, refSeq);
+            if (type === 'parallel') return renderParallelReview(seq, isReveal, refSeq);
+            return renderLinearReview(seq, isReveal, refSeq);
+        };
+
+        if (reattemptMode) {
+            return (
+                <div className="seating-arrangement-container glass" style={{ padding: '1rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                    {!isReattempted ? (
+                        <>
+                            <h4 className="seating-container-title" style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>Type your new arrangement:</h4>
+                            {renderLayout(reattemptVal)}
+                            <Button 
+                                variant="primary" 
+                                className="btn-sm" 
+                                style={{ marginTop: '1rem' }}
+                                disabled={reattemptVal.trim().replace(/\s/g, '').length < N}
+                                onClick={() => {
+                                    setReattempts(prev => ({ ...prev, [idx]: reattemptVal }));
+                                }}
+                            >
+                                Check Reattempt
+                            </Button>
+                        </>
+                    ) : (
+                        <div className="seating-reveal-container" style={{ gap: '1rem' }}>
+                            <div className="seating-reveal-section" style={{ padding: '0.85rem' }}>
+                                <h4 className="seating-container-title text-slate-300" style={{ fontSize: '0.85rem' }}>Your Reattempt:</h4>
+                                {renderLayout(finalReattempt, true, correctSequence)}
+                            </div>
+                            <div className="seating-reveal-section correct-section" style={{ padding: '0.85rem' }}>
+                                <h4 className="seating-container-title text-emerald-400" style={{ fontSize: '0.85rem' }}>Correct Arrangement:</h4>
+                                {renderLayout(correctSequence)}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="seating-arrangement-container glass" style={{ padding: '1rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <div className="seating-reveal-container" style={{ gap: '1.5rem' }}>
+                    <div className="seating-reveal-section" style={{ padding: '0.85rem' }}>
+                        <h4 className="seating-container-title text-slate-300" style={{ fontSize: '0.85rem' }}>Your Arrangement:</h4>
+                        {renderLayout(userAnswer, true, correctSequence)}
+                    </div>
+                    <div className="seating-reveal-section correct-section" style={{ padding: '0.85rem' }}>
+                        <h4 className="seating-container-title text-emerald-400" style={{ fontSize: '0.85rem' }}>Correct Arrangement:</h4>
+                        {renderLayout(correctSequence)}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const formatTime = (seconds) => {
         if (!seconds) return '00:00';
@@ -97,8 +377,13 @@ const Results = () => {
             const topic = q.subject || 'General';
             if (!topicBreakdown[topic]) topicBreakdown[topic] = { correct: 0, total: 0 };
             topicBreakdown[topic].total += 1;
-            if (answers[idx] !== undefined && answers[idx] === q.correctAnswer) {
-                topicBreakdown[topic].correct += 1;
+            if (answers[idx] !== undefined && answers[idx] !== -1 && answers[idx] !== '') {
+                const isCorrect = isSeatingArrangement(q, testFormat)
+                    ? normalizeSequence(answers[idx]) === normalizeSequence(q.options[q.correctAnswer])
+                    : answers[idx] === q.correctAnswer;
+                if (isCorrect) {
+                    topicBreakdown[topic].correct += 1;
+                }
             }
         });
 
@@ -108,9 +393,13 @@ const Results = () => {
         let localAttempted = 0;
         Object.keys(answers).forEach((qIndex) => {
             const val = answers[qIndex];
-            if (val !== undefined && val !== -1) {
+            if (val !== undefined && val !== -1 && val !== '') {
                 localAttempted += 1;
-                if (val === questions[qIndex].correctAnswer) {
+                const q = questions[qIndex];
+                const isCorrect = isSeatingArrangement(q, testFormat)
+                    ? normalizeSequence(val) === normalizeSequence(q.options[q.correctAnswer])
+                    : val === q.correctAnswer;
+                if (isCorrect) {
                     localCorrect += 1;
                 } else {
                     localIncorrect += 1;
@@ -186,9 +475,13 @@ const Results = () => {
 
     Object.keys(answers).forEach((qIndex) => {
         const val = answers[qIndex];
-        if (val !== undefined && val !== -1) {
+        if (val !== undefined && val !== -1 && val !== '') {
             attempted += 1;
-            if (val === questions[qIndex].correctAnswer) {
+            const q = questions[qIndex];
+            const isCorrect = isSeatingArrangement(q, testFormat)
+                ? normalizeSequence(val) === normalizeSequence(q.options[q.correctAnswer])
+                : val === q.correctAnswer;
+            if (isCorrect) {
                 correct += 1;
             } else {
                 incorrect += 1;
@@ -357,7 +650,10 @@ const Results = () => {
                         {questions.map((_, idx) => {
                             const time = timeSpent[idx] || 0;
                             const userAnswer = answers[idx];
-                            const isCorrect = userAnswer !== undefined && userAnswer === questions[idx].correctAnswer;
+                            const isCorrect = userAnswer !== undefined && userAnswer !== -1 && userAnswer !== '' && 
+                                (isSeatingArrangement(questions[idx], testFormat)
+                                    ? normalizeSequence(userAnswer) === normalizeSequence(questions[idx].options[questions[idx].correctAnswer])
+                                    : userAnswer === questions[idx].correctAnswer);
                             return (
                                 <div
                                     key={idx}
@@ -493,8 +789,10 @@ const Results = () => {
 
                     {questions.map((q, idx) => {
                         const userAnswer = answers[idx];
-                        const isCorrect = userAnswer === q.correctAnswer;
-                        const isAttempted = userAnswer !== undefined && userAnswer !== -1;
+                        const isCorrect = isSeatingArrangement(q, testFormat)
+                            ? (userAnswer !== undefined && normalizeSequence(userAnswer) === normalizeSequence(q.options[q.correctAnswer]))
+                            : userAnswer === q.correctAnswer;
+                        const isAttempted = userAnswer !== undefined && userAnswer !== -1 && userAnswer !== '';
 
                         const cardBorderClass = reattemptMode 
                             ? 'skipped-border' 
@@ -525,63 +823,98 @@ const Results = () => {
                                         </div>
                                     )}
                                 </div>
+                                {isSeatingArrangement(q, testFormat) && (
+                                    <div className="seating-arrangement-badge" style={{ marginBottom: '1rem', marginTop: '0.5rem' }}>
+                                        {getSeatingArrangementType(q) === 'circular' && (
+                                            <span className="seating-badge circular">🔄 Circular Seating ({getMembersCount(q)} Members)</span>
+                                        )}
+                                        {getSeatingArrangementType(q) === 'parallel' && (
+                                            <span className="seating-badge parallel">⇄ Parallel Seating ({getMembersCount(q)} Members)</span>
+                                        )}
+                                        {getSeatingArrangementType(q) === 'linear' && (
+                                            <span className="seating-badge linear">📏 Linear Seating ({getMembersCount(q)} Members)</span>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div className="review-q-text">
                                     <QuestionRenderer text={q.text} subject={q.subject} />
                                 </div>
 
-                                <div className="review-options">
-                                    {q.options.map((opt, optIdx) => {
-                                        let optClass = "review-opt ";
-                                        if (!reatattemptMode) {
-                                            if (optIdx === q.correctAnswer) optClass += "is-correct";
-                                            else if (userAnswer === optIdx) optClass += "is-wrong";
-                                        } else {
-                                            optClass += "clickable ";
-                                            if (isReattempted) {
+                                {isSeatingArrangement(q, testFormat) ? (
+                                    <>
+                                        {renderSeatingReview(q, idx)}
+                                        <div className="review-options reference-only" style={{ opacity: 0.5, pointerEvents: 'none', marginTop: '1rem' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>Reference Options:</span>
+                                            {q.options.map((opt, optIdx) => (
+                                                <div key={optIdx} className={`review-opt ${optIdx === q.correctAnswer ? 'is-correct' : ''}`}>
+                                                    <span className="opt-letter">{String.fromCharCode(65 + optIdx)}</span>
+                                                    <span className="opt-text">{opt}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="review-options">
+                                        {q.options.map((opt, optIdx) => {
+                                            let optClass = "review-opt ";
+                                            if (!reatattemptMode) {
                                                 if (optIdx === q.correctAnswer) optClass += "is-correct";
-                                                else if (optIdx === chosenIdx && chosenIdx !== q.correctAnswer) optClass += "is-wrong";
+                                                else if (userAnswer === optIdx) optClass += "is-wrong";
+                                            } else {
+                                                optClass += "clickable ";
+                                                if (isReattempted) {
+                                                    if (optIdx === q.correctAnswer) optClass += "is-correct";
+                                                    else if (optIdx === chosenIdx && chosenIdx !== q.correctAnswer) optClass += "is-wrong";
+                                                }
                                             }
-                                        }
 
-                                        return (
-                                            <div 
-                                                key={optIdx} 
-                                                className={optClass}
-                                                onClick={() => {
-                                                    if (reatattemptMode && !isReattempted) {
-                                                        setReattempts(prev => ({ ...prev, [idx]: optIdx }));
-                                                    }
-                                                }}
-                                                style={{ cursor: (reatattemptMode && !isReattempted) ? 'pointer' : 'default' }}
-                                            >
-                                                <span className="opt-letter">{String.fromCharCode(65 + optIdx)}</span>
-                                                <span className="opt-text">{opt}</span>
-                                                {!reatattemptMode ? (
-                                                    <>
-                                                        {optIdx === q.correctAnswer && <CheckCircle className="opt-icon success" size={16} />}
-                                                        {userAnswer === optIdx && !isCorrect && <XCircle className="opt-icon danger" size={16} />}
-                                                    </>
-                                                ) : (
-                                                    isReattempted && (
+                                            return (
+                                                <div 
+                                                    key={optIdx} 
+                                                    className={optClass}
+                                                    onClick={() => {
+                                                        if (reatattemptMode && !isReattempted) {
+                                                            setReattempts(prev => ({ ...prev, [idx]: optIdx }));
+                                                        }
+                                                    }}
+                                                    style={{ cursor: (reatattemptMode && !isReattempted) ? 'pointer' : 'default' }}
+                                                >
+                                                    <span className="opt-letter">{String.fromCharCode(65 + optIdx)}</span>
+                                                    <span className="opt-text">{opt}</span>
+                                                    {!reatattemptMode ? (
                                                         <>
                                                             {optIdx === q.correctAnswer && <CheckCircle className="opt-icon success" size={16} />}
-                                                            {optIdx === chosenIdx && chosenIdx !== q.correctAnswer && <XCircle className="opt-icon danger" size={16} />}
+                                                            {userAnswer === optIdx && !isCorrect && <XCircle className="opt-icon danger" size={16} />}
                                                         </>
-                                                    )
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                                    ) : (
+                                                        isReattempted && (
+                                                            <>
+                                                                {optIdx === q.correctAnswer && <CheckCircle className="opt-icon success" size={16} />}
+                                                                {optIdx === chosenIdx && chosenIdx !== q.correctAnswer && <XCircle className="opt-icon danger" size={16} />}
+                                                            </>
+                                                        )
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
                                 {reattemptMode && (
                                     <div className="reattempt-feedback-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingBottom: '1rem', borderBottom: isReattempted && q.explanation ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                             <span>First Attempt: </span>
                                             {isAttempted ? (
-                                                <span style={{ fontWeight: '600', color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
-                                                    Option {String.fromCharCode(65 + userAnswer)} ({isCorrect ? 'Correct' : 'Incorrect'})
-                                                </span>
+                                                isSeatingArrangement(q, testFormat) ? (
+                                                    <span style={{ fontWeight: '600', color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
+                                                        "{userAnswer}" ({isCorrect ? 'Correct' : 'Incorrect'})
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ fontWeight: '600', color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
+                                                        Option {String.fromCharCode(65 + userAnswer)} ({isCorrect ? 'Correct' : 'Incorrect'})
+                                                    </span>
+                                                )
                                             ) : (
                                                 <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Skipped</span>
                                             )}
@@ -590,6 +923,9 @@ const Results = () => {
                                             <button 
                                                 onClick={() => {
                                                     setReattempts(prev => { const upd = {...prev}; delete upd[idx]; return upd; });
+                                                    if (isSeatingArrangement(q, testFormat)) {
+                                                        setSeatingReattempts(prev => { const upd = {...prev}; delete upd[idx]; return upd; });
+                                                    }
                                                 }}
                                                 style={{
                                                     background: 'none',

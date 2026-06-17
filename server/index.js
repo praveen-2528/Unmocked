@@ -40,6 +40,40 @@ const generateRoomCode = () => {
     return code;
 };
 
+// Seating Arrangement Helpers
+const isSeatingArrangement = (q, testFormat) => {
+    if (!q) return false;
+    const isTopicFormat = testFormat === 'topic';
+    const topic = (q.topic || '').toLowerCase();
+    const type = (q.questionType || q.question_type || '').toLowerCase();
+    return isTopicFormat && (topic.includes('seating arrangement') || type === 'seating_arrangement');
+};
+
+const getSeatingArrangementType = (q) => {
+    if (!q) return 'linear';
+    const text = (q.text || q.question_text || '').toLowerCase();
+    const subtopic = (q.subtopic || '').toLowerCase();
+    
+    if (text.includes('circular') || text.includes('circle') || text.includes('round table') || subtopic.includes('circular')) {
+        return 'circular';
+    }
+    if (text.includes('parallel') || text.includes('two rows') || text.includes('facing each other') || subtopic.includes('parallel')) {
+        return 'parallel';
+    }
+    return 'linear';
+};
+
+const getMembersCount = (correctOptionText) => {
+    if (!correctOptionText || typeof correctOptionText !== 'string') return 0;
+    const members = correctOptionText.split(/[^A-Za-z0-9]+/).filter(Boolean);
+    return members.length;
+};
+
+const normalizeSequence = (str) => {
+    if (typeof str !== 'string') return '';
+    return str.toUpperCase().replace(/[^A-Z0-9]/g, '');
+};
+
 const ROOM_TTL = 3 * 60 * 60 * 1000; // 3 hours
 
 // Auto-cleanup stale rooms
@@ -1228,19 +1262,25 @@ app.get('/api/questions', verifyToken, (req, res) => {
     const total = db.prepare(`SELECT COUNT(*) as count FROM questions ${where}`).get(...params).count;
     const rows = db.prepare(`SELECT * FROM questions ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
 
-    const questions = rows.map(r => ({
-        id: r.id,
-        text: r.question_text,
-        options: JSON.parse(r.options),
-        correctAnswer: r.correct_answer,
-        explanation: r.explanation,
-        subject: r.subject,
-        topic: r.topic || '',
-        subtopic: r.subtopic,
-        difficulty: r.difficulty,
-        questionType: r.question_type || 'MCQ',
-        examType: r.exam_type,
-    }));
+    const questions = rows.map(r => {
+        const parsedOptions = JSON.parse(r.options);
+        const correctVal = parsedOptions[r.correct_answer] || '';
+        return {
+            id: r.id,
+            text: r.question_text,
+            options: parsedOptions,
+            correctAnswer: r.correct_answer,
+            explanation: r.explanation,
+            subject: r.subject,
+            topic: r.topic || '',
+            subtopic: r.subtopic,
+            difficulty: r.difficulty,
+            questionType: r.question_type || 'MCQ',
+            examType: r.exam_type,
+            membersCount: getMembersCount(correctVal),
+            arrangementType: getSeatingArrangementType({ text: r.question_text, subtopic: r.subtopic })
+        };
+    });
 
     const subjects = db.prepare('SELECT DISTINCT subject FROM questions WHERE user_id = ? ORDER BY subject').all(req.userId).map(r => r.subject);
     const topics = db.prepare("SELECT DISTINCT topic FROM questions WHERE user_id = ? AND topic != '' ORDER BY topic").all(req.userId).map(r => r.topic);
@@ -1341,18 +1381,24 @@ app.post('/api/questions/generate', verifyToken, (req, res) => {
         return res.status(404).json({ error: 'No questions found. Import some questions first.' });
     }
 
-    const questions = rows.map(r => ({
-        id: r.id,
-        text: r.question_text,
-        options: JSON.parse(r.options),
-        correctAnswer: r.correct_answer,
-        explanation: r.explanation,
-        subject: r.subject,
-        topic: r.topic || '',
-        subtopic: r.subtopic,
-        difficulty: r.difficulty,
-        questionType: r.question_type || 'MCQ',
-    }));
+    const questions = rows.map(r => {
+        const parsedOptions = JSON.parse(r.options);
+        const correctVal = parsedOptions[r.correct_answer] || '';
+        return {
+            id: r.id,
+            text: r.question_text,
+            options: parsedOptions,
+            correctAnswer: r.correct_answer,
+            explanation: r.explanation,
+            subject: r.subject,
+            topic: r.topic || '',
+            subtopic: r.subtopic,
+            difficulty: r.difficulty,
+            questionType: r.question_type || 'MCQ',
+            membersCount: getMembersCount(correctVal),
+            arrangementType: getSeatingArrangementType({ text: r.question_text, subtopic: r.subtopic })
+        };
+    });
 
     res.json({ questions });
 });
@@ -1373,18 +1419,24 @@ app.post('/api/questions/generate-for-room', verifyToken, (req, res) => {
         return res.status(404).json({ error: 'No questions found for this selection. Import some questions first.' });
     }
 
-    const questions = rows.map(r => ({
-        id: r.id,
-        text: r.question_text,
-        options: JSON.parse(r.options),
-        correctAnswer: r.correct_answer,
-        explanation: r.explanation,
-        subject: r.subject,
-        topic: r.topic || '',
-        subtopic: r.subtopic,
-        difficulty: r.difficulty,
-        questionType: r.question_type || 'MCQ',
-    }));
+    const questions = rows.map(r => {
+        const parsedOptions = JSON.parse(r.options);
+        const correctVal = parsedOptions[r.correct_answer] || '';
+        return {
+            id: r.id,
+            text: r.question_text,
+            options: parsedOptions,
+            correctAnswer: r.correct_answer,
+            explanation: r.explanation,
+            subject: r.subject,
+            topic: r.topic || '',
+            subtopic: r.subtopic,
+            difficulty: r.difficulty,
+            questionType: r.question_type || 'MCQ',
+            membersCount: getMembersCount(correctVal),
+            arrangementType: getSeatingArrangementType({ text: r.question_text, subtopic: r.subtopic })
+        };
+    });
 
     res.json({ questions, total: questions.length });
 });
@@ -1550,17 +1602,25 @@ app.get('/api/mocks/:id/start', verifyToken, (req, res) => {
 
     const rows = db.prepare('SELECT * FROM questions WHERE mock_test_id = ? AND user_id = ?').all(mockId, req.userId);
 
-    const questions = rows.map(r => ({
-        id: r.id,
-        text: r.question_text,
-        options: JSON.parse(r.options),
-        correctAnswer: r.correct_answer,
-        explanation: r.explanation,
-        subject: r.subject,
-        subtopic: r.subtopic,
-        difficulty: r.difficulty,
-        examType: r.exam_type,
-    }));
+    const questions = rows.map(r => {
+        const parsedOptions = JSON.parse(r.options);
+        const correctVal = parsedOptions[r.correct_answer] || '';
+        return {
+            id: r.id,
+            text: r.question_text,
+            options: parsedOptions,
+            correctAnswer: r.correct_answer,
+            explanation: r.explanation,
+            subject: r.subject,
+            topic: r.topic || '',
+            subtopic: r.subtopic,
+            difficulty: r.difficulty,
+            examType: r.exam_type,
+            questionType: r.question_type || 'MCQ',
+            membersCount: getMembersCount(correctVal),
+            arrangementType: getSeatingArrangementType({ text: r.question_text, subtopic: r.subtopic })
+        };
+    });
 
     res.json({ mock, questions });
 });
@@ -1778,11 +1838,9 @@ io.on('connection', (socket) => {
             socket.join(code);
             socket.roomCode = code;
 
-            updateDefendingChampion(room);
-
             // Notify others
             io.to(code).emit('participantJoined', {
-                participant: { name: existingParticipant.name, email: existingParticipant.email, isHost: existingParticipant.isHost, isConductor: !!existingParticipant.isConductor, connected: true, isDefendingChampion: !!existingParticipant.isDefendingChampion },
+                participant: { name: existingParticipant.name, email: existingParticipant.email, isHost: existingParticipant.isHost, isConductor: !!existingParticipant.isConductor, connected: true },
                 participants: mapParticipants(room.participants),
             });
 
@@ -1814,13 +1872,19 @@ io.on('connection', (socket) => {
                     };
 
                     if (answeredCount >= totalParticipants && totalParticipants > 0) {
-                        const correctAnswer = room.questions[room.currentQuestionIndex].correctAnswer;
+                        const q = room.questions[room.currentQuestionIndex];
+                        const correctAnswer = q.correctAnswer;
                         const playerChoices = {};
                         for (const p of room.participants.filter(x => !x.isConductor)) {
                             const data = room.currentAnswers[p.id];
+                            const isAnswerCorrect = data 
+                                ? (isSeatingArrangement(q, room.testFormat) 
+                                    ? normalizeSequence(data.optionIndex) === normalizeSequence(q.options[correctAnswer]) 
+                                    : data.optionIndex === correctAnswer)
+                                : false;
                             playerChoices[p.name] = {
                                 choice: data ? data.optionIndex : -1,
-                                isCorrect: data ? (data.optionIndex === correctAnswer) : false,
+                                isCorrect: isAnswerCorrect,
                                 timeSpentSec: data ? data.timeSpentSec : 0
                             };
                         }
@@ -1866,16 +1930,13 @@ io.on('connection', (socket) => {
         socket.join(code);
         socket.roomCode = code;
 
-        updateDefendingChampion(room);
-
         io.to(code).emit('participantJoined', {
             participant: {
                 name: participant.name,
                 email: participant.email,
                 isHost: participant.isHost,
                 isConductor: !!participant.isConductor,
-                connected: true,
-                isDefendingChampion: !!participant.isDefendingChampion
+                connected: true
             },
             participants: mapParticipants(room.participants),
         });
@@ -1971,13 +2032,19 @@ io.on('connection', (socket) => {
 
         // If everyone answered, reveal the correct answer + what each player picked
         if (answeredCount >= totalParticipants && totalParticipants > 0) {
-            const correctAnswer = room.questions[questionIndex].correctAnswer;
+            const q = room.questions[questionIndex];
+            const correctAnswer = q.correctAnswer;
             const playerChoices = {};
             for (const p of room.participants.filter(x => !x.isConductor)) {
                 const data = room.currentAnswers[p.id];
+                const isAnswerCorrect = data 
+                    ? (isSeatingArrangement(q, room.testFormat) 
+                        ? normalizeSequence(data.optionIndex) === normalizeSequence(q.options[correctAnswer]) 
+                        : data.optionIndex === correctAnswer)
+                    : false;
                 playerChoices[p.name] = {
                     choice: data ? data.optionIndex : -1,
-                    isCorrect: data ? (data.optionIndex === correctAnswer) : false,
+                    isCorrect: isAnswerCorrect,
                     timeSpentSec: data ? data.timeSpentSec : 0
                 };
             }
@@ -2021,13 +2088,19 @@ io.on('connection', (socket) => {
         if (room.hostId !== socket.id) return callback?.({ success: false, error: 'Only host can reveal.' });
 
         const qi = room.currentQuestionIndex;
-        const correctAnswer = room.questions[qi].correctAnswer;
+        const q = room.questions[qi];
+        const correctAnswer = q.correctAnswer;
         const playerChoices = {};
         for (const p of room.participants.filter(x => !x.isConductor)) {
             const data = room.currentAnswers[p.id];
+            const isAnswerCorrect = data 
+                ? (isSeatingArrangement(q, room.testFormat) 
+                    ? normalizeSequence(data.optionIndex) === normalizeSequence(q.options[correctAnswer]) 
+                    : data.optionIndex === correctAnswer)
+                : false;
             playerChoices[p.name] = {
                 choice: data ? data.optionIndex : -1,
-                isCorrect: data ? (data.optionIndex === correctAnswer) : false,
+                isCorrect: isAnswerCorrect,
                 timeSpentSec: data ? data.timeSpentSec : 0
             };
         }
@@ -2305,8 +2378,6 @@ io.on('connection', (socket) => {
         }
         room.lastActivity = Date.now();
 
-        updateDefendingChampion(room);
-
         io.to(code).emit('participantLeft', {
             participants: mapParticipants(room.participants),
         });
@@ -2317,13 +2388,19 @@ io.on('connection', (socket) => {
             const connectedAnsweredCount = connectedParticipants.filter(p => room.currentAnswers[p.id] !== undefined).length;
             if (connectedParticipants.length > 0 && connectedAnsweredCount >= connectedParticipants.length) {
                 const qi = room.currentQuestionIndex;
-                const correctAnswer = room.questions[qi].correctAnswer;
+                const q = room.questions[qi];
+                const correctAnswer = q.correctAnswer;
                 const playerChoices = {};
                 for (const p of room.participants.filter(x => !x.isConductor)) {
                     const data = room.currentAnswers[p.id];
+                    const isAnswerCorrect = data 
+                        ? (isSeatingArrangement(q, room.testFormat) 
+                            ? normalizeSequence(data.optionIndex) === normalizeSequence(q.options[correctAnswer]) 
+                            : data.optionIndex === correctAnswer)
+                        : false;
                     playerChoices[p.name] = {
                         choice: data ? data.optionIndex : -1,
-                        isCorrect: data ? (data.optionIndex === correctAnswer) : false,
+                        isCorrect: isAnswerCorrect,
                         timeSpentSec: data ? data.timeSpentSec : 0
                     };
                 }
@@ -2350,62 +2427,6 @@ io.on('connection', (socket) => {
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────
-function getPastMultiplayerWinners() {
-    try {
-        const query = `
-            WITH TestWinners AS (
-                SELECT 
-                    test_code,
-                    user_id,
-                    percentage,
-                    total_time,
-                    ROW_NUMBER() OVER (PARTITION BY test_code ORDER BY percentage DESC, total_time ASC) as rank
-                FROM test_history
-                WHERE is_multiplayer = 1 AND test_code IS NOT NULL
-            )
-            SELECT tw.user_id, u.name, u.email, tw.test_code, tw.percentage
-            FROM TestWinners tw
-            JOIN users u ON tw.user_id = u.id
-            WHERE tw.rank = 1
-        `;
-        return db.prepare(query).all();
-    } catch (err) {
-        console.error("Failed to query past multiplayer winners:", err.message);
-        return [];
-    }
-}
-
-function updateDefendingChampion(room) {
-    if (!room || !room.participants || room.participants.length === 0) return;
-    
-    // Reset flags
-    room.participants.forEach(p => { p.isDefendingChampion = false; });
-    
-    const winners = getPastMultiplayerWinners();
-    if (winners.length === 0) return;
-
-    // Filter to room active participants (matching by email)
-    const activeWinners = [];
-    room.participants.forEach(p => {
-        if (p.isConductor || !p.email) return;
-        const matchedWinner = winners.find(w => w.email.toLowerCase() === p.email.toLowerCase());
-        if (matchedWinner) {
-            activeWinners.push({
-                participant: p,
-                percentage: matchedWinner.percentage
-            });
-        }
-    });
-
-    if (activeWinners.length === 0) return;
-
-    // Sort by winning percentage (accuracy) descending
-    activeWinners.sort((a, b) => b.percentage - a.percentage);
-
-    // Crowning the active winner with highest accuracy
-    activeWinners[0].participant.isDefendingChampion = true;
-}
-
 function mapParticipants(participants) {
     return participants.map(p => ({
         name: p.name,
@@ -2415,8 +2436,7 @@ function mapParticipants(participants) {
         connected: p.connected !== false,
         currentQuestionIndex: p.currentQuestionIndex || 0,
         answeredCount: p.answeredCount || 0,
-        liveScore: p.liveScore || 0,
-        isDefendingChampion: !!p.isDefendingChampion
+        liveScore: p.liveScore || 0
     }));
 }
 
@@ -2435,6 +2455,14 @@ function sanitizeRoom(room) {
         examStarted: !!room.examStarted,
     };
 }
+
+// ─── Serve Frontend (Production) ─────────────────────────────────────
+const frontendPath = join(__dirname, '..', 'dist');
+app.use(express.static(frontendPath));
+
+app.get('*', (req, res) => {
+    res.sendFile(join(frontendPath, 'index.html'));
+});
 
 // ─── Start Server ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;

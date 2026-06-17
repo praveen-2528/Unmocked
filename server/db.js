@@ -6,7 +6,8 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const db = new Database(join(__dirname, 'testara.db'));
+const dbPath = process.env.DB_PATH || join(__dirname, 'testara.db');
+const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrency
 db.pragma('journal_mode = WAL');

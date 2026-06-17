@@ -12,6 +12,43 @@ import UserProfileModal from '../components/UserProfileModal';
 import QuestionRenderer from '../components/QuestionRenderer';
 import './Test.css';
 
+// Seating Arrangement Helpers
+const isSeatingArrangement = (q, testFormat) => {
+    if (!q) return false;
+    const isTopicFormat = testFormat === 'topic';
+    const topic = (q.topic || '').toLowerCase();
+    const type = (q.questionType || q.question_type || '').toLowerCase();
+    return isTopicFormat && (topic.includes('seating arrangement') || type === 'seating_arrangement');
+};
+
+const getSeatingArrangementType = (q) => {
+    if (!q) return 'linear';
+    const text = (q.text || '').toLowerCase();
+    const subtopic = (q.subtopic || '').toLowerCase();
+    
+    if (text.includes('circular') || text.includes('circle') || text.includes('round table') || subtopic.includes('circular')) {
+        return 'circular';
+    }
+    if (text.includes('parallel') || text.includes('two rows') || text.includes('facing each other') || subtopic.includes('parallel')) {
+        return 'parallel';
+    }
+    return 'linear';
+};
+
+const getMembersCount = (q) => {
+    if (!q) return 0;
+    if (q.membersCount) return q.membersCount;
+    const correctVal = q.options[q.correctAnswer];
+    if (!correctVal || typeof correctVal !== 'string') return 0;
+    const members = correctVal.split(/[^A-Za-z0-9]+/).filter(Boolean);
+    return members.length;
+};
+
+const normalizeSequence = (str) => {
+    if (typeof str !== 'string') return '';
+    return str.toUpperCase().replace(/[^A-Z0-9]/g, '');
+};
+
 const Test = () => {
     const { 
         examType, testFormat, questions, testStarted, currentQuestionIndex, updateExamState, 
@@ -126,8 +163,12 @@ const Test = () => {
         let incorrect = 0;
         Object.keys(answers).forEach((qIndex) => {
             const val = answers[qIndex];
-            if (val !== undefined && val !== -1) {
-                if (val === questions[qIndex].correctAnswer) {
+            if (val !== undefined && val !== -1 && val !== '') {
+                const q = questions[qIndex];
+                const isCorrect = isSeatingArrangement(q, testFormat)
+                    ? normalizeSequence(val) === normalizeSequence(q.options[q.correctAnswer])
+                    : val === q.correctAnswer;
+                if (isCorrect) {
                     score += 1;
                     correct += 1;
                 } else {
@@ -248,11 +289,17 @@ const Test = () => {
     // Send progress updates in exam mode (non-conductor players only)
     useEffect(() => {
         if (isMultiplayer && isExamMode && roomCode && !isConductor) {
-            const answeredCount = Object.keys(answers).filter(k => answers[k] !== undefined && answers[k] !== -1).length;
+            const answeredCount = Object.keys(answers).filter(k => answers[k] !== undefined && answers[k] !== -1 && answers[k] !== '').length;
             let liveScore = 0;
             questions.forEach((q, qIndex) => {
-                if (answers[qIndex] !== undefined && answers[qIndex] !== -1 && answers[qIndex] === q.correctAnswer) {
-                    liveScore += 1;
+                const val = answers[qIndex];
+                if (val !== undefined && val !== -1 && val !== '') {
+                    const isCorrect = isSeatingArrangement(q, testFormat)
+                        ? normalizeSequence(val) === normalizeSequence(q.options[q.correctAnswer])
+                        : val === q.correctAnswer;
+                    if (isCorrect) {
+                        liveScore += 1;
+                    }
                 }
             });
             room.socket?.emit('examProgress', {
@@ -262,7 +309,7 @@ const Test = () => {
                 liveScore
             });
         }
-    }, [isMultiplayer, isExamMode, roomCode, currentQuestionIndex, answers, isConductor, room.socket, questions]);
+    }, [isMultiplayer, isExamMode, roomCode, currentQuestionIndex, answers, isConductor, room.socket, questions, testFormat]);
 
     // Conductor auto-redirect to leaderboard when all players submit
     useEffect(() => {
@@ -358,6 +405,49 @@ const Test = () => {
     const isQuestionRevealed = isFriendly ? (currentQuestionIndex < roomActiveQuestionIndex || friendlyRevealed) : false;
     const questionRevealData = isFriendly ? (currentQuestionIndex < roomActiveQuestionIndex ? friendlyReveals[currentQuestionIndex] : friendlyRevealData) : null;
 
+    const handleBoxChange = (i, value, N) => {
+        const char = value.slice(-1).toUpperCase();
+        const currentVal = answers[currentQuestionIndex] || '';
+        
+        const arr = [];
+        for (let idx = 0; idx < N; idx++) {
+            if (idx === i) {
+                arr.push(char || ' ');
+            } else {
+                arr.push(currentVal[idx] || ' ');
+            }
+        }
+        const newVal = arr.join('');
+        
+        const newAnswers = { ...answers, [currentQuestionIndex]: newVal };
+        updateExamState({ answers: newAnswers });
+        
+        if (char && char !== ' ' && i < N - 1) {
+            setTimeout(() => {
+                document.getElementById(`seating-box-${currentQuestionIndex}-${i + 1}`)?.focus();
+            }, 10);
+        }
+    };
+
+    const handleBoxKeyDown = (i, e, N) => {
+        if (e.key === 'Backspace') {
+            const currentVal = answers[currentQuestionIndex] || '';
+            const char = currentVal[i] || ' ';
+            if (char === ' ' || !char) {
+                if (i > 0) {
+                    setTimeout(() => {
+                        const prev = document.getElementById(`seating-box-${currentQuestionIndex}-${i - 1}`);
+                        prev?.focus();
+                    }, 10);
+                }
+            }
+        } else if (e.key === 'ArrowLeft' && i > 0) {
+            document.getElementById(`seating-box-${currentQuestionIndex}-${i - 1}`)?.focus();
+        } else if (e.key === 'ArrowRight' && i < N - 1) {
+            document.getElementById(`seating-box-${currentQuestionIndex}-${i + 1}`)?.focus();
+        }
+    };
+
     const handleOptionSelect = (optionIndex) => {
         if (isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered)) return;
 
@@ -397,7 +487,9 @@ const Test = () => {
         if (isFriendly && !speedDemonAwardedRef.current) {
             const q = questions[currentQuestionIndex];
             const optionIndex = answers[currentQuestionIndex];
-            const isCorrect = optionIndex === q.correctAnswer;
+            const isCorrect = isSeatingArrangement(q, testFormat)
+                ? normalizeSequence(optionIndex) === normalizeSequence(q.options[q.correctAnswer])
+                : optionIndex === q.correctAnswer;
 
             if (isCorrect && timeTaken <= 5) {
                 if (!answeredCorrectlyInStreakRef.current.has(currentQuestionIndex)) {
@@ -480,10 +572,17 @@ const Test = () => {
 
     const handlePartialSubmit = () => {
         let score = 0;
-        let attempted = Object.keys(answers).length;
+        let attempted = Object.keys(answers).filter(k => answers[k] !== undefined && answers[k] !== -1 && answers[k] !== '').length;
         Object.keys(answers).forEach((qIndex) => {
-            if (answers[qIndex] === questions[qIndex].correctAnswer) {
-                score += 1;
+            const val = answers[qIndex];
+            if (val !== undefined && val !== -1 && val !== '') {
+                const q = questions[qIndex];
+                const isCorrect = isSeatingArrangement(q, testFormat)
+                    ? normalizeSequence(val) === normalizeSequence(q.options[q.correctAnswer])
+                    : val === q.correctAnswer;
+                if (isCorrect) {
+                    score += 1;
+                }
             }
         });
         alert(`Mid-way Progress check:\n\nYou have answered ${attempted} out of ${questions.length} questions.\nYour current score is ${score}/${questions.length}.\n\nYou can keep going!`);
@@ -910,6 +1009,191 @@ const Test = () => {
         return renderInstructions();
     }
 
+    const renderSeatingArrangement = (q) => {
+        const N = getMembersCount(q);
+        const type = getSeatingArrangementType(q);
+        const answerVal = answers[currentQuestionIndex] || '';
+        const reveal = isQuestionRevealed ? (friendlyReveals[currentQuestionIndex] || friendlyRevealData) : null;
+        const correctAnsIndex = reveal ? reveal.correctAnswer : q.correctAnswer;
+        const revealCorrectSequence = normalizeSequence(q.options[correctAnsIndex]);
+
+        const isDisabled = isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered || friendlyRevealed);
+
+        // Linear layout
+        const renderLinear = (seq, isRevealLayout = false, userSeq = null) => {
+            const items = [];
+            for (let i = 0; i < N; i++) {
+                const char = (seq[i] || ' ').trim();
+                let boxClass = "seating-box-input";
+                if (isRevealLayout) {
+                    const matches = char.toUpperCase() === (userSeq?.[i] || '').toUpperCase();
+                    boxClass += matches ? " correct-box" : " incorrect-box";
+                }
+                items.push(
+                    <div key={i} className="seating-box-wrapper">
+                        <span className="seating-box-label">{i + 1}</span>
+                        <input
+                            id={`seating-box-${currentQuestionIndex}-${i}${isRevealLayout ? '-reveal' : ''}`}
+                            type="text"
+                            maxLength={1}
+                            className={boxClass}
+                            value={char}
+                            disabled={isDisabled || isRevealLayout}
+                            onChange={(e) => handleBoxChange(i, e.target.value, N)}
+                            onKeyDown={(e) => handleBoxKeyDown(i, e, N)}
+                            placeholder="?"
+                        />
+                    </div>
+                );
+            }
+            return (
+                <div className="seating-layout-linear animate-fade-in">
+                    {items}
+                </div>
+            );
+        };
+
+        // Circular layout
+        const renderCircular = (seq, isRevealLayout = false, userSeq = null) => {
+            const items = [];
+            const radius = 95; // pixels (slightly adjusted for spacing)
+            for (let i = 0; i < N; i++) {
+                const char = (seq[i] || ' ').trim();
+                const angle = (i * 2 * Math.PI) / N - Math.PI / 2; // start at top
+                const x = Math.round(radius * Math.cos(angle));
+                const y = Math.round(radius * Math.sin(angle));
+
+                let boxClass = "seating-box-input";
+                if (isRevealLayout) {
+                    const matches = char.toUpperCase() === (userSeq?.[i] || '').toUpperCase();
+                    boxClass += matches ? " correct-box" : " incorrect-box";
+                }
+
+                items.push(
+                    <div 
+                        key={i} 
+                        className="seating-box-wrapper"
+                        style={{
+                            position: 'absolute',
+                            left: `calc(50% + ${x}px - 21px)`,
+                            top: `calc(50% + ${y}px - 21px)`,
+                        }}
+                    >
+                        <span className="seating-box-label circular-label">{i + 1}</span>
+                        <input
+                            id={`seating-box-${currentQuestionIndex}-${i}${isRevealLayout ? '-reveal' : ''}`}
+                            type="text"
+                            maxLength={1}
+                            className={boxClass}
+                            value={char}
+                            disabled={isDisabled || isRevealLayout}
+                            onChange={(e) => handleBoxChange(i, e.target.value, N)}
+                            onKeyDown={(e) => handleBoxKeyDown(i, e, N)}
+                            placeholder="?"
+                            style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}
+                        />
+                    </div>
+                );
+            }
+            return (
+                <div className="seating-layout-circular animate-fade-in">
+                    <div className="seating-circle-table">
+                        <div className="circle-table-center">
+                            <span>TABLE</span>
+                        </div>
+                        {items}
+                    </div>
+                </div>
+            );
+        };
+
+        // Parallel layout
+        const renderParallel = (seq, isRevealLayout = false, userSeq = null) => {
+            const half = Math.ceil(N / 2);
+            const row1 = [];
+            const row2 = [];
+
+            for (let i = 0; i < N; i++) {
+                const char = (seq[i] || ' ').trim();
+                let boxClass = "seating-box-input";
+                if (isRevealLayout) {
+                    const matches = char.toUpperCase() === (userSeq?.[i] || '').toUpperCase();
+                    boxClass += matches ? " correct-box" : " incorrect-box";
+                }
+
+                const element = (
+                    <div key={i} className="seating-box-wrapper">
+                        <span className="seating-box-label">{i + 1}</span>
+                        <input
+                            id={`seating-box-${currentQuestionIndex}-${i}${isRevealLayout ? '-reveal' : ''}`}
+                            type="text"
+                            maxLength={1}
+                            className={boxClass}
+                            value={char}
+                            disabled={isDisabled || isRevealLayout}
+                            onChange={(e) => handleBoxChange(i, e.target.value, N)}
+                            onKeyDown={(e) => handleBoxKeyDown(i, e, N)}
+                            placeholder="?"
+                        />
+                    </div>
+                );
+
+                if (i < half) {
+                    row1.push(element);
+                } else {
+                    row2.push(element);
+                }
+            }
+
+            return (
+                <div className="seating-layout-parallel animate-fade-in">
+                    <div className="parallel-row row-north">
+                        <span className="row-indicator">Row 1 (Facing South)</span>
+                        <div className="parallel-boxes">{row1}</div>
+                    </div>
+                    <div className="parallel-divider">
+                        <div className="divider-arrows">↓ ↓ ↓ ↓ ↓</div>
+                        <div className="divider-line"></div>
+                        <div className="divider-arrows">↑ ↑ ↑ ↑ ↑</div>
+                    </div>
+                    <div className="parallel-row row-south">
+                        <div className="parallel-boxes">{row2}</div>
+                        <span className="row-indicator">Row 2 (Facing North)</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const renderLayout = (seq, isRevealLayout = false, userSeq = null) => {
+            if (type === 'circular') return renderCircular(seq, isRevealLayout, userSeq);
+            if (type === 'parallel') return renderParallel(seq, isRevealLayout, userSeq);
+            return renderLinear(seq, isRevealLayout, userSeq);
+        };
+
+        return (
+            <div className="seating-arrangement-container glass">
+                {!isQuestionRevealed ? (
+                    <>
+                        <h4 className="seating-container-title">Arrange the sequence:</h4>
+                        {renderLayout(answerVal)}
+                        <p className="seating-helper-text">Click any seat and type a letter. Use ← → keys to navigate.</p>
+                    </>
+                ) : (
+                    <div className="seating-reveal-container">
+                        <div className="seating-reveal-section">
+                            <h4 className="seating-container-title text-slate-300">Your Arrangement:</h4>
+                            {renderLayout(answerVal, true, revealCorrectSequence)}
+                        </div>
+                        <div className="seating-reveal-section correct-section">
+                            <h4 className="seating-container-title text-emerald-400">Correct Arrangement:</h4>
+                            {renderLayout(revealCorrectSequence)}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     // Determine option class in friendly reveal mode
     const getOptionClass = (optIdx) => {
         let cls = 'option-item';
@@ -1043,42 +1327,60 @@ const Test = () => {
                             )}
                         </div>
 
+                        {isSeatingArrangement(currentQuestion, testFormat) && (
+                            <div className="seating-arrangement-badge" style={{ marginBottom: '1rem' }}>
+                                {getSeatingArrangementType(currentQuestion) === 'circular' && (
+                                    <span className="seating-badge circular">🔄 Circular Seating Arrangement ({getMembersCount(currentQuestion)} Members)</span>
+                                )}
+                                {getSeatingArrangementType(currentQuestion) === 'parallel' && (
+                                    <span className="seating-badge parallel">⇄ Parallel Seating Arrangement ({getMembersCount(currentQuestion)} Members)</span>
+                                )}
+                                {getSeatingArrangementType(currentQuestion) === 'linear' && (
+                                    <span className="seating-badge linear">📏 Linear Seating Arrangement ({getMembersCount(currentQuestion)} Members)</span>
+                                )}
+                            </div>
+                        )}
+
                         <div className="question-text">
                             <QuestionRenderer text={currentQuestion.text} subject={currentQuestion.subject} />
                         </div>
 
-                        <div className="options-list">
-                            {currentQuestion.options.map((option, idx) => (
-                                <button
-                                    key={idx}
-                                    className={getOptionClass(idx)}
-                                    onClick={() => handleOptionSelect(idx)}
-                                    disabled={isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered || friendlyRevealed)}
-                                >
-                                    <div className="option-marker">
-                                        {String.fromCharCode(65 + idx)}
-                                    </div>
-                                    <div className="option-content">{option}</div>
-                                    {/* Normal selected check */}
-                                    {!isQuestionRevealed && answers[currentQuestionIndex] === idx && (
-                                        <CheckCircle className="option-check" style={{ color: 'var(--primary)' }} size={20} />
-                                    )}
-                                    {/* Friendly reveal: correct */}
-                                    {isQuestionRevealed && idx === questionRevealData?.correctAnswer && (
-                                        <CheckCircle className="option-check success-icon" size={20} />
-                                    )}
-                                    {/* Friendly reveal: my wrong pick */}
-                                    {isQuestionRevealed && answers[currentQuestionIndex] === idx && idx !== questionRevealData?.correctAnswer && (
-                                        <XCircle className="option-check danger-icon" size={20} />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
+                        {isSeatingArrangement(currentQuestion, testFormat) ? (
+                            renderSeatingArrangement(currentQuestion)
+                        ) : (
+                            <div className="options-list">
+                                {currentQuestion.options.map((option, idx) => (
+                                    <button
+                                        key={idx}
+                                        className={getOptionClass(idx)}
+                                        onClick={() => handleOptionSelect(idx)}
+                                        disabled={isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered || friendlyRevealed)}
+                                    >
+                                        <div className="option-marker">
+                                            {String.fromCharCode(65 + idx)}
+                                        </div>
+                                        <div className="option-content">{option}</div>
+                                        {/* Normal selected check */}
+                                        {!isQuestionRevealed && answers[currentQuestionIndex] === idx && (
+                                            <CheckCircle className="option-check" style={{ color: 'var(--primary)' }} size={20} />
+                                        )}
+                                        {/* Friendly reveal: correct */}
+                                        {isQuestionRevealed && idx === questionRevealData?.correctAnswer && (
+                                            <CheckCircle className="option-check success-icon" size={20} />
+                                        )}
+                                        {/* Friendly reveal: my wrong pick */}
+                                        {isQuestionRevealed && answers[currentQuestionIndex] === idx && idx !== questionRevealData?.correctAnswer && (
+                                            <XCircle className="option-check danger-icon" size={20} />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Friendly Mode Actions (Save & Skip) */}
                         {isFriendly && currentQuestionIndex === roomActiveQuestionIndex && !friendlyAnswered && !friendlyRevealed && (
                             <div className="friendly-actions-container animate-fade-in" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                                {answers[currentQuestionIndex] !== undefined && (
+                                {(answers[currentQuestionIndex] !== undefined && answers[currentQuestionIndex].toString().trim() !== '') && (
                                     <Button variant="primary" onClick={handleSaveAnswer} style={{ minWidth: '150px' }}>
                                         🔒 Save Answer
                                     </Button>
@@ -1269,7 +1571,7 @@ const Test = () => {
                                     key={idx}
                                     className={`palette-btn 
                       ${currentQuestionIndex === idx ? 'current' : ''} 
-                      ${(answers[idx] !== undefined && answers[idx] !== -1) ? 'answered' : ''}
+                      ${(answers[idx] !== undefined && answers[idx] !== -1 && answers[idx].toString().trim() !== '') ? 'answered' : ''}
                       ${markedForReview?.includes(idx) ? 'review' : ''}
                       ${friendlyClass}
                     `}
