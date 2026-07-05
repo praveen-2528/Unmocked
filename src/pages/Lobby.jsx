@@ -71,7 +71,7 @@ const Lobby = () => {
     // ── Shared State ─────────────────────────────────────────────────
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
-    const [copiedInvite, setCopiedInvite] = useState(false);
+
     const [loading, setLoading] = useState(false);
 
     // Fetch saved mocks
@@ -242,7 +242,9 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                 method: 'POST',
                 body: JSON.stringify({ questions }),
             });
-        } catch { }
+        } catch (err) {
+            console.error('Failed to save to bank', err);
+        }
     };
 
     // ── Step 4: Create Room ──────────────────────────────────────────
@@ -286,7 +288,9 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                     savedState = parsed;
                 }
             }
-        } catch (e) { }
+        } catch { 
+            // ignore 
+        }
 
         let initialAnswers = {};
         let initialTimeSpent = [];
@@ -390,14 +394,6 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         setLoading(false);
     };
 
-    const getInviteLink = () => {
-        return null;
-    };
-
-    const getShortInviteLink = () => {
-        return getInviteLink();
-    };
-
     const copyCode = async () => {
         const success = await copyToClipboard(room.roomCode);
         if (success) {
@@ -406,16 +402,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         }
     };
 
-    const copyInviteLink = async () => {
-        const link = getShortInviteLink() || getInviteLink();
-        if (link) {
-            const success = await copyToClipboard(link);
-            if (success) {
-                setCopiedInvite(true);
-                setTimeout(() => setCopiedInvite(false), 2000);
-            }
-        }
-    };
+
 
 
 
@@ -429,10 +416,9 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
 
 
 
-    // Listen for test start
     useEffect(() => {
         if (!room.socket) return;
-        const handler = ({ questions, examType: et, testFormat: tf, roomMode: rm }) => {
+        const handler = ({ questions, examType: et, testFormat: tf }) => {
             updateExamState({
                 examType: et,
                 testFormat: tf,
@@ -454,8 +440,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
 
     // ── WAITING LOBBY VIEW ───────────────────────────────────────────
     if (room.roomCode && !room.started) {
-        const inviteLink = getInviteLink();
-        const lanUrl = getLanUrl();
+
         return (
             <div className="lobby-container waiting-lobby animate-fade-in">
                 <div className="lobby-grid">
