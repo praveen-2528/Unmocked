@@ -21,6 +21,6 @@ COPY server ./server
 
 EXPOSE 8080
 ENV PORT=8080
-ENV DB_PATH=/data/testara.db
+ENV DB_PATH=/data/unmocked.db
 
 CMD ["node", "server/index.js"]

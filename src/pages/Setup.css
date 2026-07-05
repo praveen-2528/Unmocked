@@ -4,7 +4,7 @@
     min-height: 100vh;
     padding: 2rem;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     gap: 2rem;
 }
@@ -94,17 +94,18 @@
 /* Home Grid Layout */
 .home-grid {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 2rem;
-    align-items: start;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
     width: 100%;
 }
 
-.home-actions-column, .home-dashboard-column {
+.home-actions-column, .home-dashboard-column, .home-ai-column {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
     width: 100%;
+    min-width: 0;
 }
 
 /* Home Card Extensions */
@@ -115,6 +116,20 @@
     border: 1px solid var(--card-border) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
     transition: all 0.3s ease;
+}
+
+.multiplayer-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.multiplayer-card .mp-join-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
 }
 
 .home-card:hover {
@@ -571,20 +586,61 @@
 
 /* Secondary Actions Bar */
 .setup-secondary-actions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 0.75rem 1rem;
-    border-radius: 16px;
-    background: rgba(15, 23, 42, 0.4);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.5);
     border: 1px solid var(--card-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    width: 100%;
 }
 
 .secondary-action-btn {
-    padding: 0.6rem 1.25rem !important;
-    border-radius: 10px !important;
-    font-size: 0.8rem !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.25rem !important;
+    border-radius: 14px !important;
+    font-size: 0.9rem !important;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(30, 41, 59, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    cursor: pointer;
+    text-align: center;
+}
+
+.secondary-action-btn svg {
+    width: 24px !important;
+    height: 24px !important;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    margin-bottom: 0.2rem;
+}
+
+.secondary-action-btn:hover {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.secondary-action-btn:hover svg {
+    color: var(--primary);
+    transform: scale(1.15);
+}
+
+.secondary-action-btn.ai-tint:hover svg {
+    color: #c084fc;
+}
+
+.secondary-action-btn.primary-tint:hover svg {
+    color: #818cf8;
 }
 
 /* Animations */
@@ -597,7 +653,13 @@
 }
 
 /* Responsive grid styling */
-@media (max-width: 960px) {
+@media (max-width: 1000px) {
+    .home-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 800px) {
     .home-grid {
         grid-template-columns: 1fr;
     }
@@ -766,4 +828,127 @@
         height: 90vh;
         border-radius: 12px;
     }
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.quick-action-btn svg {
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover svg {
+    color: #6366f1;
+}
+
+.quick-action-btn.primary-tint svg {
+    color: #6366f1;
+}
+
+.quick-action-btn.ai-tint svg {
+    color: #c084fc;
+}\n
+/* Premium Features CSS */
+.aurora-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+    overflow: hidden;
+    background: #0f172a; /* Deep dark slate to replace the global green */
+}
+.aurora-blob {
+    position: absolute;
+    filter: blur(120px);
+    opacity: 0.35;
+    border-radius: 50%;
+    animation: aurora-drift 20s infinite alternate ease-in-out;
+}
+.blob-1 { background: #4f46e5; width: 45vw; height: 45vh; top: -15%; left: -10%; }
+.blob-2 { background: #10b981; width: 40vw; height: 40vh; bottom: -10%; right: -5%; animation-delay: -5s; }
+.blob-3 { background: #8b5cf6; width: 35vw; height: 35vh; top: 40%; left: 30%; animation-delay: -10s; }
+
+@keyframes aurora-drift {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(60px, 80px) scale(1.1); }
+}
+
+.gamification-badges {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: 1.5rem;
+}
+.gamification-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.streak-badge { color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
+.xp-badge { color: #eab308; border-color: rgba(234, 179, 8, 0.3); }
+
+.activity-ticker-wrap {
+    margin: 1.5rem 0 2rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+}
+.activity-ticker {
+    display: inline-block;
+    animation: marquee 25s linear infinite;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.activity-ticker:hover {
+    animation-play-state: paused;
+}
+.activity-ticker span {
+    display: inline-block;
+}
+.activity-ticker strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.activity-ticker .separator {
+    margin: 0 1.5rem;
+    color: rgba(255, 255, 255, 0.2);
+}
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }

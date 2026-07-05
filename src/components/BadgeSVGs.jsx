@@ -2,7 +2,7 @@ import React from 'react';
 
 // Insert badge animations globally if they don't already exist
 if (typeof document !== 'undefined') {
-    const styleId = 'testara-badge-animations';
+    const styleId = 'unmocked-badge-animations';
     if (!document.getElementById(styleId)) {
         const styleSheet = document.createElement('style');
         styleSheet.id = styleId;
@@ -438,6 +438,153 @@ export const GSMasterBadge = ({ size = 64, animated = true }) => {
     );
 };
 
+// 11. NIGHT OWL (night_owl)
+export const NightOwlBadge = ({ size = 64, animated = true }) => {
+    const animationStyle = animated ? { animation: 'badge-pulse 3s infinite ease-in-out', '--glow-color': 'rgba(124, 58, 237, 0.6)' } : {};
+    return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ ...animationStyle, overflow: 'visible' }}>
+            <circle cx="50" cy="50" r="40" fill="#1e1b4b" stroke="#7c3aed" strokeWidth="2" />
+            <path d="M50 20 A30 30 0 0 1 80 50 A30 30 0 0 1 50 80 A25 25 0 0 0 50 20 Z" fill="#fde047" opacity="0.9" style={animated ? { animation: 'shine-glow 2s infinite alternate ease-in-out' } : {}} />
+            <circle cx="30" cy="40" r="2" fill="#ffffff" />
+            <circle cx="70" cy="30" r="1.5" fill="#ffffff" />
+            <circle cx="40" cy="70" r="2" fill="#ffffff" />
+        </svg>
+    );
+};
+
+// 12. EARLY BIRD (early_bird)
+export const EarlyBirdBadge = ({ size = 64, animated = true }) => {
+    const animationStyle = animated ? { animation: 'badge-pulse 3s infinite ease-in-out', '--glow-color': 'rgba(249, 115, 22, 0.6)' } : {};
+    return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ ...animationStyle, overflow: 'visible' }}>
+            <circle cx="50" cy="50" r="40" fill="#fff7ed" stroke="#f97316" strokeWidth="2" />
+            <path d="M20 60 A30 30 0 0 1 80 60" fill="#facc15" opacity="0.9" style={animated ? { animation: 'float-badge 2.5s infinite ease-in-out' } : {}} />
+            <path d="M10 70 L90 70 L90 80 L10 80 Z" fill="#fdba74" />
+        </svg>
+    );
+};
+
+// 13. MARATHONER (marathoner)
+export const MarathonerBadge = ({ size = 64, animated = true }) => {
+    const animationStyle = animated ? { animation: 'badge-pulse 3s infinite ease-in-out', '--glow-color': 'rgba(16, 185, 129, 0.6)' } : {};
+    return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ ...animationStyle, overflow: 'visible' }}>
+            <rect x="20" y="20" width="60" height="60" rx="10" fill="#064e3b" stroke="#10b981" strokeWidth="2" />
+            <path d="M40 30 L60 30 L60 70 L40 70 Z" fill="#34d399" opacity="0.3" />
+            <path d="M30 40 L70 40 L70 60 L30 60 Z" fill="#059669" opacity="0.5" />
+            <circle cx="50" cy="50" r="10" fill="#6ee7b7" style={animated ? { animation: 'shine-glow 1.5s infinite alternate ease-in-out' } : {}} />
+        </svg>
+    );
+};
+
+// 14. UNSTOPPABLE (unstoppable)
+export const UnstoppableBadge = ({ size = 64, animated = true }) => {
+    const animationStyle = animated ? { animation: 'badge-pulse 3s infinite ease-in-out', '--glow-color': 'rgba(225, 29, 72, 0.6)' } : {};
+    return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ ...animationStyle, overflow: 'visible' }}>
+            <circle cx="50" cy="50" r="42" fill="#4c0519" stroke="#e11d48" strokeWidth="2" strokeDasharray="5 5" style={animated ? { animation: 'orbit-spin 10s infinite linear' } : {}} />
+            <path d="M50 15 L58 35 L78 35 L62 48 L68 68 L50 55 L32 68 L38 48 L22 35 L42 35 Z" fill="#fb7185" style={animated ? { animation: 'flame-flicker 2s infinite alternate ease-in-out' } : {}} />
+        </svg>
+    );
+};
+
+// 15. FLAWLESS VICTORY (flawless_victory)
+export const FlawlessVictoryBadge = ({ size = 64, animated = true }) => {
+    const animationStyle = animated ? { animation: 'badge-pulse 3s infinite ease-in-out', '--glow-color': 'rgba(253, 224, 71, 0.6)' } : {};
+    return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ ...animationStyle, overflow: 'visible' }}>
+            <polygon points="50,15 85,35 85,75 50,95 15,75 15,35" fill="#713f12" stroke="#fde047" strokeWidth="2" />
+            <polygon points="50,25 75,40 75,70 50,85 25,70 25,40" fill="#ca8a04" opacity="0.6" style={animated ? { animation: 'shine-glow 2s infinite alternate ease-in-out' } : {}} />
+            <path d="M35 50 L45 60 L65 40" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+};
+
+export const Streak10Badge = ({ size, animated }) => (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{
+        overflow: 'visible',
+        animation: animated ? 'badge-pulse 2s infinite ease-in-out' : 'none',
+        '--glow-color': 'rgba(239, 68, 68, 0.4)'
+    }}>
+        <defs>
+            <linearGradient id="streak10Grad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#ef4444" />
+            </linearGradient>
+            <filter id="flameGlow">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+        </defs>
+        <circle cx="50" cy="50" r="42" fill="url(#streak10Grad)" />
+        <circle cx="50" cy="50" r="38" fill="#1e1e1e" />
+        <path d="M50 25 C30 45, 35 65, 50 75 C65 65, 70 45, 50 25 Z" fill="url(#streak10Grad)" filter="url(#flameGlow)" style={{ transformOrigin: '50% 50%', animation: animated ? 'flame-flicker 1.5s infinite ease-in-out' : 'none' }} />
+        <text x="50" y="62" fontFamily="sans-serif" fontSize="24" fontWeight="bold" fill="#ffffff" textAnchor="middle">10</text>
+    </svg>
+);
+
+export const Roast0PercentBadge = ({ size, animated }) => (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{
+        overflow: 'visible',
+        animation: animated ? 'float-badge 3s infinite ease-in-out' : 'none'
+    }}>
+        <defs>
+            <linearGradient id="roast0Grad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#0ea5e9" />
+                <stop offset="100%" stopColor="#1e3a8a" />
+            </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" fill="url(#roast0Grad)" />
+        <circle cx="50" cy="50" r="38" fill="#0f172a" />
+        <text x="50" y="65" fontFamily="sans-serif" fontSize="45" fontWeight="bold" fill="#0ea5e9" textAnchor="middle">0%</text>
+        <path d="M25 25 L75 75 M75 25 L25 75" stroke="#0ea5e9" strokeWidth="4" opacity="0.5" />
+    </svg>
+);
+
+export const RoastSlowpokeBadge = ({ size, animated }) => (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ overflow: 'visible' }}>
+        <defs>
+            <linearGradient id="slowpokeGrad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#84cc16" />
+                <stop offset="100%" stopColor="#4d7c0f" />
+            </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" fill="url(#slowpokeGrad)" />
+        <circle cx="50" cy="50" r="38" fill="#1e293b" />
+        <text x="50" y="60" fontFamily="sans-serif" fontSize="30" fontWeight="bold" fill="#84cc16" textAnchor="middle">Zzz</text>
+    </svg>
+);
+
+export const RoastStreakWrongBadge = ({ size, animated }) => (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ overflow: 'visible' }}>
+        <defs>
+            <linearGradient id="wrongGrad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#dc2626" />
+                <stop offset="100%" stopColor="#7f1d1d" />
+            </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" fill="url(#wrongGrad)" />
+        <circle cx="50" cy="50" r="38" fill="#1e1e1e" />
+        <path d="M35 35 L65 65 M65 35 L35 65" stroke="#dc2626" strokeWidth="10" strokeLinecap="round" />
+    </svg>
+);
+
+export const RoastBlindGuesserBadge = ({ size, animated }) => (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ overflow: 'visible' }}>
+        <defs>
+            <linearGradient id="blindGrad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#9333ea" />
+                <stop offset="100%" stopColor="#4c1d95" />
+            </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" fill="url(#blindGrad)" />
+        <circle cx="50" cy="50" r="38" fill="#1e1e1e" />
+        <text x="50" y="65" fontFamily="sans-serif" fontSize="45" fontWeight="bold" fill="#9333ea" textAnchor="middle">?</text>
+        <circle cx="35" cy="50" r="4" fill="#9333ea" />
+        <circle cx="65" cy="50" r="4" fill="#9333ea" />
+    </svg>
+);
+
 // Main Resolver component mapping key -> SVG component
 const BadgeIcon = ({ badgeKey, size = 64, animated = true }) => {
     switch (badgeKey) {
@@ -461,6 +608,26 @@ const BadgeIcon = ({ badgeKey, size = 64, animated = true }) => {
             return <EnglishMasterBadge size={size} animated={animated} />;
         case 'master_gs':
             return <GSMasterBadge size={size} animated={animated} />;
+        case 'night_owl':
+            return <NightOwlBadge size={size} animated={animated} />;
+        case 'early_bird':
+            return <EarlyBirdBadge size={size} animated={animated} />;
+        case 'marathoner':
+            return <MarathonerBadge size={size} animated={animated} />;
+        case 'unstoppable':
+            return <UnstoppableBadge size={size} animated={animated} />;
+        case 'flawless_victory':
+            return <FlawlessVictoryBadge size={size} animated={animated} />;
+        case 'streak_10':
+            return <Streak10Badge size={size} animated={animated} />;
+        case 'roast_0_percent':
+            return <Roast0PercentBadge size={size} animated={animated} />;
+        case 'roast_slowpoke':
+            return <RoastSlowpokeBadge size={size} animated={animated} />;
+        case 'roast_streak_wrong':
+            return <RoastStreakWrongBadge size={size} animated={animated} />;
+        case 'roast_blind_guesser':
+            return <RoastBlindGuesserBadge size={size} animated={animated} />;
         default:
             // Generic Fallback
             return (

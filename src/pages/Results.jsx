@@ -4,12 +4,13 @@ import { useExam } from '../context/ExamContext';
 import { useRoom } from '../context/RoomContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { CheckCircle, XCircle, ChevronLeft, Award, Clock, Trophy, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronLeft, Award, Clock, Trophy, RefreshCw, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import FriendlyChat from '../components/FriendlyChat';
 import UserProfileModal from '../components/UserProfileModal';
 import QuestionRenderer from '../components/QuestionRenderer';
 import BadgeIcon from '../components/BadgeSVGs';
+import SolutionsView from '../components/SolutionsView';
 import './Results.css';
 
 // Seating Arrangement Helpers
@@ -98,6 +99,9 @@ const Results = () => {
 
     // Gamification celebrations states
     const [celebrationBadges, setCelebrationBadges] = useState([]);
+    
+    // View mode: 'summary' or 'solutions'
+    const [viewMode, setViewMode] = useState('summary');
     const [levelUpData, setLevelUpData] = useState(null);
     const [activeBadgeIndex, setActiveBadgeIndex] = useState(0);
     const [isCardFlipped, setIsCardFlipped] = useState(false);
@@ -413,6 +417,7 @@ const Results = () => {
         const localPercentage = ((localCorrect / questions.length) * 100).toFixed(1);
 
         const totalTimeSec = timeSpent.reduce((a, b) => a + (b || 0), 0);
+        const localStartHour = new Date(Date.now() - (totalTimeSec * 1000)).getHours();
 
         authFetch('/api/history', {
             method: 'POST',
@@ -421,6 +426,7 @@ const Results = () => {
                 testFormat: 'mock',
                 score: localRawScore,
                 total: questions.length,
+                localStartHour,
                 correct: localCorrect,
                 incorrect: localIncorrect,
                 unattempted: localUnattempted,
@@ -589,19 +595,34 @@ const Results = () => {
         return descs[key] || '';
     };
 
+    if (viewMode === 'solutions') {
+        return (
+            <SolutionsView 
+                questions={questions}
+                answers={answers}
+                timeSpent={timeSpent}
+                markingScheme={markingScheme}
+                onClose={() => setViewMode('summary')}
+            />
+        );
+    }
+
     return (
-        <div className="results-container animate-fade-in">
+        <div className="results-container animate-fade-in" style={{ paddingBottom: '80px' }}>
             <header className="results-header glass">
                 <div className="header-content">
                     <Award size={28} className="text-primary" />
                     <h2>Test Results Summary</h2>
                 </div>
-                <div className="results-header-actions">
+                <div className="results-header-actions no-print">
                     {isMultiplayer && roomCode && (
                         <Button variant="primary" onClick={() => navigate('/leaderboard')}>
                             <Trophy size={16} /> Leaderboard
                         </Button>
                     )}
+                    <Button variant="outline" onClick={() => window.print()} className="print-btn">
+                        <Printer size={16} /> Export PDF
+                    </Button>
                     <Button variant="outline" onClick={handleBackHome}>
                         <ChevronLeft size={16} /> New Test
                     </Button>
@@ -776,7 +797,7 @@ const Results = () => {
                             <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px' }}>
                                 <input 
                                     type="checkbox" 
-                                    checked={reatattemptMode} 
+                                    checked={reattemptMode} 
                                     onChange={(e) => setReattemptMode(e.target.checked)} 
                                     style={{ opacity: 0, width: 0, height: 0 }}
                                 />
@@ -809,13 +830,13 @@ const Results = () => {
                                         <span className="q-time text-slate-400" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem' }}>
                                             <Clock size={14} /> {formatTime(timeSpent?.[idx] || 0)}
                                         </span>
-                                        {!reatattemptMode && isAttempted && (
+                                        {!reattemptMode && isAttempted && (
                                             <span className={`marks-pill ${isCorrect ? 'positive' : 'negative'}`}>
                                                 {isCorrect ? `+${ms.correct}` : ms.incorrect}
                                             </span>
                                         )}
                                     </div>
-                                    {!reatattemptMode && (
+                                    {!reattemptMode && (
                                         <div className="q-status">
                                             {!isAttempted && <span className="status-badge skipped">Skipped</span>}
                                             {isAttempted && isCorrect && <span className="status-badge correct"><CheckCircle size={14} /> Correct</span>}
@@ -858,7 +879,7 @@ const Results = () => {
                                     <div className="review-options">
                                         {q.options.map((opt, optIdx) => {
                                             let optClass = "review-opt ";
-                                            if (!reatattemptMode) {
+                                            if (!reattemptMode) {
                                                 if (optIdx === q.correctAnswer) optClass += "is-correct";
                                                 else if (userAnswer === optIdx) optClass += "is-wrong";
                                             } else {
@@ -874,15 +895,15 @@ const Results = () => {
                                                     key={optIdx} 
                                                     className={optClass}
                                                     onClick={() => {
-                                                        if (reatattemptMode && !isReattempted) {
+                                                        if (reattemptMode && !isReattempted) {
                                                             setReattempts(prev => ({ ...prev, [idx]: optIdx }));
                                                         }
                                                     }}
-                                                    style={{ cursor: (reatattemptMode && !isReattempted) ? 'pointer' : 'default' }}
+                                                    style={{ cursor: (reattemptMode && !isReattempted) ? 'pointer' : 'default' }}
                                                 >
                                                     <span className="opt-letter">{String.fromCharCode(65 + optIdx)}</span>
                                                     <span className="opt-text">{opt}</span>
-                                                    {!reatattemptMode ? (
+                                                    {!reattemptMode ? (
                                                         <>
                                                             {optIdx === q.correctAnswer && <CheckCircle className="opt-icon success" size={16} />}
                                                             {userAnswer === optIdx && !isCorrect && <XCircle className="opt-icon danger" size={16} />}
@@ -1048,6 +1069,29 @@ const Results = () => {
                     </div>
                 </div>
             )}
+
+            {/* Bottom Sticky Toggle */}
+            <div style={{
+                position: 'fixed',
+                bottom: 0, left: 0, width: '100vw',
+                background: 'var(--card-bg)',
+                borderTop: '1px solid var(--card-border)',
+                display: 'flex', justifyContent: 'center', gap: '10px',
+                padding: '10px', zIndex: 100
+            }}>
+                <Button 
+                    variant={viewMode === 'summary' ? 'primary' : 'outline'} 
+                    onClick={() => setViewMode('summary')}
+                >
+                    Summary
+                </Button>
+                <Button 
+                    variant={viewMode === 'solutions' ? 'primary' : 'outline'} 
+                    onClick={() => setViewMode('solutions')}
+                >
+                    Question Paper
+                </Button>
+            </div>
         </div>
     );
 };

@@ -5,7 +5,7 @@ import './WritingPad.css';
 const COLORS = ['#ffffff', '#a5b4fc', '#f87171', '#4ade80', '#facc15', '#fb923c', '#38bdf8', '#e879f9'];
 const MIN_SIZE = 1;
 const MAX_SIZE = 20;
-const LS_KEY = 'testara_pad_strokes';
+const LS_KEY = 'unmocked_pad_strokes';
 
 const WritingPad = forwardRef(({
     questionIndex = 0,

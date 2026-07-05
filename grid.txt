@@ -1,0 +1,611 @@
+            {/* Main Interactive Grid */}
+            <div className="home-grid">
+                {/* LEFT COLUMN: Actions */}
+                <div className="home-actions-column">
+                    
+                    {/* Multiplayer Card */}
+                    <Card className="home-card multiplayer-card glass">
+                        <div className="card-header">
+                            <div className="title-icon"><Users size={22} className="text-primary" /></div>
+                            <div>
+                                <h2>Multiplayer Mode</h2>
+                                <p>Compete and solve with friends live</p>
+                            </div>
+                        </div>
+
+                        <div className="mp-join-form">
+                            {/* Active Local Rooms list */}
+                            {activeRooms.length > 0 && (
+                                <div className="active-rooms-container" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '1rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        🌐 Active Local Rooms (Click to Join)
+                                    </label>
+                                    <div className="active-rooms-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                                        {activeRooms.map((r, i) => (
+                                            <div 
+                                                key={i} 
+                                                className="active-room-item glass" 
+                                                onClick={() => {
+                                                    setMpJoinCode(r.code);
+                                                    setMpJoinLink('');
+                                                }}
+                                                style={{ 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between', 
+                                                    alignItems: 'center', 
+                                                    padding: '0.5rem 0.75rem', 
+                                                    borderRadius: '8px', 
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)', 
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <div style={{ textAlign: 'left' }}>
+                                                    <div style={{ fontWeight: '600', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                                                        Room {r.code} • {r.hostName}'s Room
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                                                        {r.examType.toUpperCase()} ({r.roomMode}) • {r.participantCount} player{r.participantCount !== 1 ? 's' : ''}
+                                                    </div>
+                                                </div>
+                                                <span className={`format-badge ${r.started ? 'multiplayer-badge' : 'friendly-badge'}`} style={{ fontSize: '0.65rem', padding: '0.15rem 0.5rem' }}>
+                                                    {r.started ? 'In Test' : 'Lobby'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label>Your Screen Name</label>
+                                <input 
+                                    type="text" 
+                                    value={mpPlayerName}
+                                    onChange={e => setMpPlayerName(e.target.value)}
+                                    placeholder="Enter your name..."
+                                />
+                            </div>
+
+                            <div className="mp-input-row">
+                                <div className="form-group flex-1">
+                                    <label>Room Code</label>
+                                    <input 
+                                        type="text" 
+                                        value={mpJoinCode}
+                                        onChange={e => {
+                                            setMpJoinCode(e.target.value);
+                                            if (e.target.value.trim()) setMpJoinLink(''); // clear other input
+                                        }}
+                                        placeholder="e.g., 1234"
+                                        maxLength={4}
+                                        className="code-input"
+                                    />
+                                </div>
+                                <div className="form-group flex-2">
+                                    <label>Or Paste Invite Link</label>
+                                    <input 
+                                        type="text" 
+                                        value={mpJoinLink}
+                                        onChange={e => {
+                                            setMpJoinLink(e.target.value);
+                                            if (e.target.value.trim()) setMpJoinCode(''); // clear other input
+                                        }}
+                                        placeholder="https://unmocked.trycloudflare.com/?room=..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Room Preview Panel with Grouped Participants */}
+                            {selectedRoomPreview && (
+                                <div className="room-preview-box glass animate-fade-in" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(15, 23, 42, 0.4)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.4rem' }}>
+                                        <span style={{ fontWeight: '600', fontSize: '0.8rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            🏠 Room {selectedRoomPreview.code} Preview
+                                        </span>
+                                        <span className={`format-badge ${selectedRoomPreview.started ? 'multiplayer-badge' : 'friendly-badge'}`} style={{ fontSize: '0.65rem', padding: '0.15rem 0.5rem' }}>
+                                            {selectedRoomPreview.started ? 'In Test' : 'Lobby'}
+                                        </span>
+                                    </div>
+                                    
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'flex', gap: '0.8rem', justifyContent: 'flex-start' }}>
+                                        <span><strong>Host:</strong> {selectedRoomPreview.hostName}</span>
+                                        <span><strong>Exam:</strong> {selectedRoomPreview.examType.toUpperCase()} ({selectedRoomPreview.roomMode})</span>
+                                    </div>
+
+                                    <div style={{ marginBottom: '0.25rem', textAlign: 'left' }}>
+                                        <strong style={{ fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Players Group:</strong>
+                                        {(() => {
+                                            const participants = selectedRoomPreview.participants || [];
+                                            if (participants.length === 0) {
+                                                return <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>No players.</span>;
+                                            }
+
+                                            if (!selectedRoomPreview.started) {
+                                                return (
+                                                    <div>
+                                                        <span style={{ fontSize: '0.7rem', color: '#a5b4fc', fontWeight: '600' }}>👥 In Lobby:</span>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                                                            {participants.map((p, idx) => (
+                                                                <span key={idx} className="avatar-chip" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-primary)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>
+                                                                    {p.isHost ? '👑 ' : ''}{p.name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            const inTest = participants.filter(p => p.connected && !p.hasSubmitted);
+                                            const disconnected = participants.filter(p => !p.connected && !p.hasSubmitted);
+                                            const finished = participants.filter(p => p.hasSubmitted);
+
+                                            return (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                    {inTest.length > 0 && (
+                                                        <div>
+                                                            <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: '600' }}>✍️ Solving in Test:</span>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                                                                {inTest.map((p, idx) => (
+                                                                    <span key={idx} className="avatar-chip" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>
+                                                                        {p.isHost ? '👑 ' : ''}{p.name}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {disconnected.length > 0 && (
+                                                        <div>
+                                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>💤 Lobby / Disconnected:</span>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                                                                {disconnected.map((p, idx) => (
+                                                                    <span key={idx} className="avatar-chip" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>
+                                                                        {p.isHost ? '👑 ' : ''}{p.name}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {finished.length > 0 && (
+                                                        <div>
+                                                            <span style={{ fontSize: '0.7rem', color: '#a5b4fc', fontWeight: '600' }}>🏁 Finished:</span>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                                                                {finished.map((p, idx) => (
+                                                                    <span key={idx} className="avatar-chip" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>
+                                                                        {p.isHost ? '👑 ' : ''}{p.name}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+
+                            {mpError && (
+                                <div className="error-message">
+                                    <AlertCircle size={14} />
+                                    <span>{mpError}</span>
+                                </div>
+                            )}
+
+                            <div className="mp-buttons-row">
+                                <Button 
+                                    variant="primary" 
+                                    onClick={handleQuickJoin} 
+                                    disabled={mpLoading}
+                                    className="flex-1"
+                                >
+                                    {mpLoading ? <><Loader size={16} className="spin" /> Joining...</> : <><LogIn size={16} /> Join Room</>}
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => navigate('/lobby?tab=create')}
+                                    className="create-room-btn"
+                                >
+                                    <Plus size={16} /> Create Room
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Shared Documents & Notes Portal Card */}
+                    <Card 
+                        className="home-card documents-card glass hover-lift" 
+                        style={{ 
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem',
+                            border: '1px solid rgba(99, 102, 241, 0.2)',
+                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%)'
+                        }} 
+                        onClick={() => navigate('/documents')}
+                    >
+                        <div className="card-header" style={{ marginBottom: 0, paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                <div className="title-icon" style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '0.6rem', borderRadius: '10px', flexShrink: 0 }}>
+                                    <FileText size={22} className="text-primary" style={{ color: '#a5b4fc' }} />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>Study Materials & Notes</h2>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.15rem 0 0 0' }}>Access references, formulas, and study papers shared by admins</p>
+                                </div>
+                            </div>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={(e) => { e.stopPropagation(); navigate('/documents'); }}
+                                className="more-docs-btn"
+                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.2rem', height: 'auto', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                            >
+                                More Documents &rarr;
+                            </Button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                            {recentDocs.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                    No shared documents available.
+                                </div>
+                            ) : (
+                                recentDocs.map(doc => (
+                                    <div 
+                                        key={doc.id} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center', 
+                                            background: 'rgba(255, 255, 255, 0.03)', 
+                                            padding: '0.6rem 1rem', 
+                                            borderRadius: '10px', 
+                                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                                            gap: '1rem'
+                                        }}
+                                        onClick={(e) => e.stopPropagation()} // Prevent card navigation
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', overflow: 'hidden', flex: 1 }}>
+                                            <FileText size={16} style={{ color: '#818cf8', flexShrink: 0 }} />
+                                            <span 
+                                                style={{ 
+                                                    fontSize: '0.85rem', 
+                                                    fontWeight: '600', 
+                                                    color: 'var(--text-primary)', 
+                                                    overflow: 'hidden', 
+                                                    textOverflow: 'ellipsis', 
+                                                    whiteSpace: 'nowrap' 
+                                                }}
+                                                title={doc.title}
+                                            >
+                                                {doc.title}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc.id, doc.filename, doc.file_type); }}
+                                                disabled={downloadingDocId === doc.id}
+                                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', height: 'auto' }}
+                                            >
+                                                {downloadingDocId === doc.id ? (
+                                                    <Loader2 size={12} className="animate-spin" />
+                                                ) : (
+                                                    <Download size={12} />
+                                                )}
+                                                <span>Download</span>
+                                            </Button>
+                                            {doc.filename.toLowerCase().endsWith('.pdf') ? (
+                                                <Button 
+                                                    variant="primary" 
+                                                    size="sm" 
+                                                    onClick={(e) => { e.stopPropagation(); handleViewPDFDocument(doc.id, doc.filename, doc.file_type); }}
+                                                    disabled={downloadingDocId === doc.id}
+                                                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', height: 'auto' }}
+                                                >
+                                                    View
+                                                </Button>
+                                            ) : (
+                                                <Button 
+                                                    variant="primary" 
+                                                    size="sm" 
+                                                    onClick={(e) => { e.stopPropagation(); navigate('/documents'); }}
+                                                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', height: 'auto' }}
+                                                >
+                                                    View
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                            {allDocsCount > 2 && (
+                                <div style={{ textAlign: 'right', marginTop: '0.25rem' }}>
+                                    <span 
+                                        onClick={(e) => { e.stopPropagation(); navigate('/documents'); }}
+                                        style={{ fontSize: '0.8rem', color: '#818cf8', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}
+                                    >
+                                        Browse all documents ({allDocsCount}) &rarr;
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+
+                    {/* Practice Solo Card */}
+                    <Card className="home-card practice-card glass">
+                        <div className="card-header">
+                            <div className="title-icon"><Target size={22} className="text-indigo" /></div>
+                            <div>
+                                <h2>Practice Solo</h2>
+                                <p>Self-paced test preparation wizard</p>
+                            </div>
+                        </div>
+
+                        <div className="solo-practice-wizard">
+                            <div className="steps-indicator inline-steps">
+                                <div className={`step ${step >= 1 ? 'active' : ''}`} onClick={() => setStep(1)}>1. Exam</div>
+                                <div className="step-line"></div>
+                                <div className={`step ${step >= 2 ? 'active' : ''}`} onClick={() => step > 1 && setStep(2)}>2. Format</div>
+                                <div className="step-line"></div>
+                                <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Load</div>
+                            </div>
+
+                            {/* Step 1: Select Exam Type */}
+                            {step === 1 && (
+                                <div className="step-content animate-fade-in">
+                                    <div className="wizard-list-options">
+                                        {Object.values(EXAM_TEMPLATES).map(t => (
+                                            <button
+                                                key={t.id}
+                                                className={`wizard-row-btn ${examType === t.id ? 'selected' : ''}`}
+                                                onClick={() => handleExamTypeSelect(t.id)}
+                                            >
+                                                <div className="icon-wrapper"><BookOpen size={16} /></div>
+                                                <div className="btn-label-text">
+                                                    <strong>{t.name}</strong>
+                                                    <span>{t.subjects.length} Subjects • {t.optionsPerQuestion} Options</span>
+                                                </div>
+                                                <ArrowRight size={14} className="arrow-next" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Step 2: Test Format */}
+                            {step === 2 && (
+                                <div className="step-content animate-fade-in">
+                                    <div className="wizard-list-options">
+                                        <button onClick={() => handleFormatSelect('full')} className="wizard-row-btn">
+                                            <div className="icon-wrapper"><LayoutTemplate size={16} /></div>
+                                            <div className="btn-label-text">
+                                                <strong>Full Mock Test</strong>
+                                                <span>A comprehensive test covering all sections</span>
+                                            </div>
+                                            <ArrowRight size={14} className="arrow-next" />
+                                        </button>
+                                        <button onClick={() => handleFormatSelect('subject')} className="wizard-row-btn">
+                                            <div className="icon-wrapper"><Library size={16} /></div>
+                                            <div className="btn-label-text">
+                                                <strong>Subject Wise Practice</strong>
+                                                <span>Practice one specific subject section</span>
+                                            </div>
+                                            <ArrowRight size={14} className="arrow-next" />
+                                        </button>
+                                        <button onClick={() => handleFormatSelect('topic')} className="wizard-row-btn">
+                                            <div className="icon-wrapper"><Target size={16} /></div>
+                                            <div className="btn-label-text">
+                                                <strong>Topic Wise Drill</strong>
+                                                <span>Focus practice on a specific micro-topic</span>
+                                            </div>
+                                            <ArrowRight size={14} className="arrow-next" />
+                                        </button>
+                                    </div>
+                                    <Button variant="ghost" onClick={() => setStep(1)} className="wizard-back-btn">Back to Exam Selection</Button>
+                                </div>
+                            )}
+
+                            {/* Step 3: Load Data & Configure */}
+                            {step === 3 && (
+                                <div className="step-content data-load-step animate-fade-in">
+                                    {/* Mocks */}
+                                    {savedMocks.length > 0 && testFormat === 'full' && (
+                                        <div className="sub-load-method">
+                                            <label className="sub-label"><LayoutTemplate size={14} /> Launch Pre-Built Mock</label>
+                                            <div className="input-with-button">
+                                                <select value={selectedMockId} onChange={e => setSelectedMockId(e.target.value)}>
+                                                    <option value="">-- Choose Mock --</option>
+                                                    {savedMocks.filter(m => m.exam_template_id === examType).map(m => (
+                                                        <option key={m.id} value={m.id}>{m.name} ({m.question_count} Qs)</option>
+                                                    ))}
+                                                </select>
+                                                <Button variant="primary" onClick={startSavedMock} disabled={!selectedMockId}>Launch</Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Bank Generation */}
+                                    {bankSubjects.length > 0 && (
+                                        <div className="sub-load-method">
+                                            <label className="sub-label"><Library size={14} /> Generate from Question Bank</label>
+                                            <div className="input-with-button">
+                                                <select value={bankSubject} onChange={e => setBankSubject(e.target.value)} className="flex-2">
+                                                    <option value="all">All Subjects</option>
+                                                    {bankSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                                </select>
+                                                <input 
+                                                    type="number" 
+                                                    value={bankCount} 
+                                                    onChange={e => setBankCount(Math.max(1, parseInt(e.target.value) || 1))}
+                                                    style={{ maxWidth: '60px' }}
+                                                />
+                                                <Button variant="primary" onClick={startFromBank} disabled={bankLoading}>
+                                                    {bankLoading ? 'Loading...' : 'Generate'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Paste CSV */}
+                                    <div className="sub-load-method">
+                                        <label className="sub-label"><FileSpreadsheet size={14} /> Paste CSV Questions</label>
+                                        <textarea
+                                            rows={3}
+                                            value={csvInput}
+                                            onChange={e => setCsvInput(e.target.value)}
+                                            placeholder="question,option_a,option_b,option_c,option_d,correct_option,explanation..."
+                                            className="quick-textarea"
+                                        />
+                                        <Button variant="primary" onClick={handleCSVParse} disabled={!csvInput.trim()} className="w-full mt-2">
+                                            Parse & Practice
+                                        </Button>
+                                    </div>
+
+                                    {/* Override preset */}
+                                    <div className="quick-marking-override">
+                                        <span className="override-title">Override Marking Scheme</span>
+                                        <div className="override-presets">
+                                            <button className={`preset-pill ${markingPreset === 'ssc' ? 'active' : ''}`} onClick={() => setMarkingPreset('ssc')}>+2 / -0.5</button>
+                                            <button className={`preset-pill ${markingPreset === 'none' ? 'active' : ''}`} onClick={() => setMarkingPreset('none')}>+1 / 0</button>
+                                        </div>
+                                    </div>
+
+                                    {error && (
+                                        <div className="error-message">
+                                            <AlertCircle size={14} />
+                                            <span>{error}</span>
+                                        </div>
+                                    )}
+
+                                    <Button variant="ghost" onClick={() => setStep(2)} className="wizard-back-btn">Back to Format</Button>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+                </div>
+
+                {/* RIGHT COLUMN: Graph and quote */}
+                <div className="home-dashboard-column">
+                    
+                    {/* Today's Study Goals Card */}
+                    <Card className="home-card study-goals-card glass">
+                        <div className="card-header">
+                            <div className="title-icon"><Calendar size={22} className="text-primary" /></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                <div>
+                                    <h2>Today's Study Plan</h2>
+                                    <p>{todaySchedule ? `${new Date(todaySchedule.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • ${todaySchedule.day}` : 'Check today\'s schedule'}</p>
+                                </div>
+                                <Button variant="outline" className="btn-xs" onClick={() => setShowScheduleModal(true)} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', height: 'auto' }}>
+                                    📅 Full Schedule
+                                </Button>
+                            </div>
+                        </div>
+
+                        {todaySchedule ? (
+                            <div className="study-goals-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {[
+                                    { key: 1, label: 'Logical Reasoning', topic: todaySchedule.topic1 },
+                                    { key: 2, label: 'Quantitative Aptitude', topic: todaySchedule.topic2 },
+                                    { key: 3, label: 'English Language', topic: todaySchedule.topic3 },
+                                    { key: 4, label: 'General Studies & GK', topic: todaySchedule.topic4 }
+                                ].map((t) => {
+                                    if (!t.topic) return null;
+                                    return (
+                                        <div 
+                                            key={t.key} 
+                                            className={`study-goal-item glass ${checkedTopics[t.key] ? 'completed' : ''}`}
+                                            onClick={() => handleTopicCheckToggle(t.key)}
+                                            style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '0.85rem', 
+                                                padding: '0.75rem 1rem', 
+                                                borderRadius: '10px', 
+                                                border: '1px solid rgba(255, 255, 255, 0.04)', 
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                background: checkedTopics[t.key] ? 'rgba(16, 185, 129, 0.05)' : 'rgba(30, 41, 59, 0.2)'
+                                            }}
+                                        >
+                                            <input 
+                                                type="checkbox" 
+                                                checked={checkedTopics[t.key] || false}
+                                                onChange={() => {}} // handled by div click
+                                                id={`topic-check-${t.key}`}
+                                                style={{ cursor: 'pointer', pointerEvents: 'none' }}
+                                            />
+                                            <div className="study-goal-content" style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', textAlign: 'left' }}>
+                                                <span className="goal-subject" style={{ fontSize: '0.7rem', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.label}</span>
+                                                <span className="goal-topic" style={{ fontSize: '0.85rem', color: checkedTopics[t.key] ? 'var(--text-secondary)' : 'var(--text-primary)', textDecoration: checkedTopics[t.key] ? 'line-through' : 'none' }}>{t.topic}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                
+                                {/* Daily Progress Bar */}
+                                <div className="study-progress-section" style={{ marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                                    {(() => {
+                                        const total = [todaySchedule.topic1, todaySchedule.topic2, todaySchedule.topic3, todaySchedule.topic4].filter(Boolean).length;
+                                        const completed = Object.keys(checkedTopics).filter(k => checkedTopics[k] && [todaySchedule.topic1, todaySchedule.topic2, todaySchedule.topic3, todaySchedule.topic4][k-1]).length;
+                                        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                                        return (
+                                            <>
+                                                <div className="study-progress-lbl" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '0.35rem' }}>
+                                                    <span>Daily Progress</span>
+                                                    <span style={{ color: pct === 100 ? '#10b981' : 'var(--text-primary)' }}>{completed}/{total} ({pct}%)</span>
+                                                </div>
+                                                <div className="study-progress-bar-bg" style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                    <div className="study-progress-bar-fill" style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? 'var(--success)' : 'var(--primary)', transition: 'width 0.3s ease' }}></div>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="study-goals-empty text-center" style={{ padding: '1rem' }}>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>No specific study goals scheduled for today.</p>
+                                <Button variant="outline" className="btn-sm" onClick={() => setShowScheduleModal(true)}>
+                                    📅 View Full Schedule
+                                </Button>
+                            </div>
+                        )}
+                    </Card>
+
+                    {/* Performance Graphs Card */}
+                    <Card className="home-card graph-card glass">
+                        <div className="card-header">
+                            <div className="title-icon"><TrendingUp size={22} className="text-emerald" /></div>
+                            <div>
+                                <h2>Performance Overview</h2>
+                                <p>Analyze your solo practice results</p>
+                            </div>
+                        </div>
+
+                        {historyLoading ? (
+                            <div className="graph-placeholder"><Loader className="spin" /> Loading stats...</div>
+                        ) : history.length === 0 ? (
+                            <div className="graph-placeholder empty">
+                                <BarChart3 size={32} />
+                                <p>No practice test data available yet.</p>
+                                <span className="sub-hint">Perform some practice mock tests or CSV uploads to view your score trends and stats graph.</span>
+                            </div>
+                        ) : (
+                            <div className="dashboard-stats-content">
+                                {/* SVG Graph */}
+                                {chartData ? (
+                                    <div className="svg-trend-wrap">
+                                        <svg viewBox={`0 0 ${chartData.W} ${chartData.H}`} className="dashboard-trend-chart">
+                                            <defs>
+                                                <linearGradient id="areaGradHome" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                                                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                                                </linearGradient>
+                                            </defs>
+                                            
+                                            {/* Y Grid lines */}

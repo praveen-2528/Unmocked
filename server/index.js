@@ -5,8 +5,6 @@ import cors from 'cors';
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Tunnel } from 'cloudflared';
-import os from 'os';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
@@ -15,7 +13,7 @@ import db from './db.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const JWT_SECRET = process.env.JWT_SECRET || 'testara_secret_key_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'unmocked_secret_key_change_in_production';
 
 const app = express();
 app.use(cors());
@@ -105,43 +103,6 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-// ─── Tunnel State ────────────────────────────────────────────────────
-let tunnelProcess = null;
-let tunnelUrl = null;
-let shortUrl = null;
-
-// Helper: shorten URL (try multiple free services, no API key needed)
-async function shortenUrl(longUrl) {
-    if (!longUrl) return null;
-    // Try TinyURL
-    try {
-        const resp = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-        if (resp.ok) {
-            const shortened = (await resp.text()).trim();
-            if (shortened.startsWith('http')) {
-                console.log('[Shorten] TinyURL success:', shortened);
-                return shortened;
-            }
-        }
-    } catch (e) {
-        console.log('[Shorten] TinyURL failed:', e.message);
-    }
-    // Try is.gd
-    try {
-        const resp = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`);
-        if (resp.ok) {
-            const shortened = (await resp.text()).trim();
-            if (shortened.startsWith('http')) {
-                console.log('[Shorten] is.gd success:', shortened);
-                return shortened;
-            }
-        }
-    } catch (e) {
-        console.log('[Shorten] is.gd failed:', e.message);
-    }
-    console.log('[Shorten] All shorteners failed, using full URL');
-    return longUrl; // fallback to full URL
-}
 
 // ─── REST Endpoints ──────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -160,92 +121,6 @@ app.get('/api/network-info', (_req, res) => {
         }
     }
     res.json({ addresses });
-});
-
-// ── Tunnel: Start (Cloudflare Quick Tunnel — no password!) ──────────
-app.post('/api/tunnel/start', async (_req, res) => {
-    if (tunnelProcess && tunnelUrl) {
-        return res.json({ success: true, url: tunnelUrl, shortUrl });
-    }
-    // Clean up stale process if URL was lost
-    if (tunnelProcess && !tunnelUrl) {
-        try { tunnelProcess.stop(); } catch { }
-        tunnelProcess = null;
-    }
-    try {
-        console.log('[Tunnel] Starting Cloudflare tunnel...');
-
-        // Point tunnel to Vite dev server (5173) which serves frontend + proxies API/socket to Express
-        const VITE_PORT = 5173;
-        const t = Tunnel.quick(`http://localhost:${VITE_PORT}`);
-
-        // Wait for the URL event from cloudflared
-        const cfUrl = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Tunnel URL timed out after 30 seconds.'));
-            }, 30000);
-
-            t.once('url', (url) => {
-                clearTimeout(timeout);
-                console.log(`[Tunnel] Got URL: ${url}`);
-                resolve(url);
-            });
-
-            t.once('error', (err) => {
-                clearTimeout(timeout);
-                reject(err);
-            });
-
-            t.once('exit', (code) => {
-                clearTimeout(timeout);
-                reject(new Error(`Tunnel process exited with code ${code}`));
-            });
-        });
-
-        tunnelUrl = cfUrl;
-        tunnelProcess = t;
-
-        console.log(`[Tunnel] Online at ${tunnelUrl}`);
-
-        // Shorten the invite URL
-        shortUrl = await shortenUrl(tunnelUrl);
-        console.log(`[Tunnel] Short URL: ${shortUrl}`);
-
-        // Monitor for tunnel close
-        t.on('exit', () => {
-            tunnelProcess = null;
-            tunnelUrl = null;
-            shortUrl = null;
-            console.log('[Tunnel] Closed.');
-        });
-
-        res.json({ success: true, url: tunnelUrl, shortUrl });
-    } catch (err) {
-        console.error('[Tunnel] Failed to start:', err.message);
-        // Clean up on failure
-        if (tunnelProcess && !tunnelUrl) {
-            try { tunnelProcess.stop(); } catch { }
-            tunnelProcess = null;
-        }
-        res.status(500).json({ success: false, error: 'Failed to create tunnel: ' + err.message });
-    }
-});
-
-// ── Tunnel: Status ──────────────────────────────────────────────────
-app.get('/api/tunnel/status', (_req, res) => {
-    const active = !!(tunnelProcess && tunnelUrl);
-    res.json({ active, url: tunnelUrl, shortUrl });
-});
-
-// ── Tunnel: Stop ────────────────────────────────────────────────────
-app.post('/api/tunnel/stop', (_req, res) => {
-    if (tunnelProcess) {
-        try { tunnelProcess.stop(); } catch { }
-        tunnelProcess = null;
-        tunnelUrl = null;
-        shortUrl = null;
-    }
-    res.json({ success: true });
 });
 
 
@@ -1512,7 +1387,7 @@ Return ONLY the JSON array. No other text.`;
             return res.status(500).json({ error: 'AI returned invalid format. Please try again.' });
         }
 
-        // Normalize to Testara format
+        // Normalize to UnMocked format
         const questions = generated.map((q, i) => {
             const opts = q.options;
             let optionsArray, correctAnswer;
@@ -1778,6 +1653,7 @@ io.on('connection', (socket) => {
             currentQuestionIndex: 0,
             // Friendly mode: track who answered for current question
             currentAnswers: {}, // { socketId: optionIndex }
+            friendlyHistory: {},
             lastActivity: Date.now(),
         };
 
@@ -1802,9 +1678,9 @@ io.on('connection', (socket) => {
         const isConductor = !!(user && user.role === 'admin');
 
         // Check if player is rejoining (by email or name)
-        const existingParticipant = cleanEmail
-            ? room.participants.find(p => p.email === cleanEmail)
-            : room.participants.find(p => p.name === playerName);
+        const existingParticipant = room.participants.find(p => 
+            (cleanEmail && p.email === cleanEmail) || p.name === playerName
+        );
 
         if (existingParticipant) {
             // Rejoin!
@@ -1815,8 +1691,24 @@ io.on('connection', (socket) => {
             let nameChanged = false;
 
             if (playerName && existingParticipant.name !== playerName) {
+                const oldName = existingParticipant.name;
                 existingParticipant.name = playerName;
                 nameChanged = true;
+
+                // Patch friendly history
+                if (room.friendlyHistory && room.friendlyHistory[oldName]) {
+                    room.friendlyHistory[playerName] = room.friendlyHistory[oldName];
+                    delete room.friendlyHistory[oldName];
+                }
+
+                // Patch results
+                if (room.results) {
+                    room.results.forEach(r => {
+                        if (r.playerName === oldName) {
+                            r.playerName = playerName;
+                        }
+                    });
+                }
             }
 
             // Migrate old answer if it exists
@@ -1906,7 +1798,8 @@ io.on('connection', (socket) => {
                     currentQuestionIndex: room.currentQuestionIndex,
                     roomMode: room.roomMode,
                     friendlyAnswerStatus,
-                    friendlyRevealData
+                    friendlyRevealData,
+                    playerHistory: (room.roomMode === 'friendly' && room.friendlyHistory && room.friendlyHistory[existingParticipant.name]) ? room.friendlyHistory[existingParticipant.name] : null
                 });
             } else {
                 return callback({
@@ -2006,6 +1899,13 @@ io.on('connection', (socket) => {
             optionIndex,
             timeSpentSec: timeSpentSec || 0
         };
+        const _pName = room.participants.find(p => p.id === socket.id)?.name || 'Unknown';
+        if (_pName !== 'Unknown') {
+            if (!room.friendlyHistory) room.friendlyHistory = {};
+            if (!room.friendlyHistory[_pName]) room.friendlyHistory[_pName] = { answers: {}, timeSpent: {} };
+            room.friendlyHistory[_pName].answers[questionIndex] = optionIndex;
+            room.friendlyHistory[_pName].timeSpent[questionIndex] = timeSpentSec || 0;
+        }
         room.lastActivity = Date.now();
 
         const playerName = room.participants.find(p => p.id === socket.id)?.name || 'Unknown';
@@ -2122,6 +2022,7 @@ io.on('connection', (socket) => {
         if (room.hostId !== socket.id) return callback?.({ success: false, error: 'Only host can finish.' });
 
         room.lastActivity = Date.now();
+        room.examFinished = true;
         io.to(code).emit('friendlyForceSubmit');
         console.log(`[Friendly] Host force-finished exam in ${code}`);
         callback?.({ success: true });
@@ -2147,8 +2048,12 @@ io.on('connection', (socket) => {
         const participant = room.participants.find(p => p.id === socket.id);
         const email = participant?.email || null;
 
-        // Discard any prior result from this socket ID or this email
-        room.results = room.results.filter(r => r.playerId !== socket.id && (!email || r.email !== email));
+        // Prevent duplicate submissions
+        const alreadySubmitted = room.results.some(r => r.playerId === socket.id || (email && r.email === email) || r.playerName === playerName);
+        if (alreadySubmitted) {
+            console.log(`[Room] ${playerName} already submitted results in ${code}. Ignoring duplicate submission.`);
+            return callback?.({ success: true, rank: room.results.findIndex(r => r.playerId === socket.id || (email && r.email === email) || r.playerName === playerName) + 1 });
+        }
 
         const totalTime = timeSpent.reduce((sum, t) => sum + (t || 0), 0);
 
@@ -2286,14 +2191,36 @@ io.on('connection', (socket) => {
 
         room.lastActivity = Date.now();
 
+        const activePlayers = room.participants.filter(p => !p.isConductor);
+        const totalParticipants = activePlayers.length;
+        const connectedRemaining = activePlayers.filter(p => p.connected !== false && !room.results.some(r => (p.email && r.email === p.email) || r.playerName === p.name)).length;
+
+        // Auto-submit 0-scores for disconnected users if exam is finished or everyone connected has finished
+        if (room.examFinished || connectedRemaining === 0) {
+            const disconnectedUnsubmitted = activePlayers.filter(p => p.connected === false && !room.results.some(r => (p.email && r.email === p.email) || r.playerName === p.name));
+            for (const p of disconnectedUnsubmitted) {
+                room.results.push({
+                    playerId: p.id,
+                    playerName: p.name,
+                    email: p.email || null,
+                    score: 0,
+                    total: total,
+                    correct: 0,
+                    incorrect: 0,
+                    marks: 0,
+                    maxMarks: total * (markingScheme?.correct || 2),
+                    totalTime: 0,
+                    isDisconnected: true
+                });
+            }
+        }
+
         room.results.sort((a, b) => {
             const marksA = a.marks !== undefined ? a.marks : a.score;
             const marksB = b.marks !== undefined ? b.marks : b.score;
             return marksB - marksA || a.totalTime - b.totalTime;
         });
 
-        const activePlayers = room.participants.filter(p => !p.isConductor);
-        const totalParticipants = activePlayers.length;
         const allSubmitted = room.results.length === totalParticipants;
 
         io.to(code).emit('leaderboardUpdate', {
@@ -2303,7 +2230,8 @@ io.on('connection', (socket) => {
             allSubmitted,
         });
 
-        if (allSubmitted && totalParticipants >= 3 && room.results.length > 0) {
+        if (allSubmitted && totalParticipants >= 3 && room.results.length > 0 && !room.gladiatorAwarded) {
+            room.gladiatorAwarded = true;
             const winner = room.results[0];
             if (winner && winner.email) {
                 try {
@@ -2467,5 +2395,5 @@ app.get('*', (req, res) => {
 // ─── Start Server ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n  🚀 Testara server running on http://localhost:${PORT}\n`);
+    console.log(`\n  🚀 UnMocked server running on http://localhost:${PORT}\n`);
 });

@@ -118,7 +118,7 @@ const calendarStyles = `
 const ContributionCalendar = ({ activity = {} }) => {
     // Inject stylesheet on mount
     React.useEffect(() => {
-        const styleId = 'testara-calendar-styles';
+        const styleId = 'unmocked-calendar-styles';
         if (!document.getElementById(styleId)) {
             const sheet = document.createElement('style');
             sheet.id = styleId;

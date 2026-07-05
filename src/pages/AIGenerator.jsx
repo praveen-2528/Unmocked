@@ -60,10 +60,12 @@ RULES:
 - difficulty must be: ${difficulty}
 - question_type should be: MCQ
 - exam_type should be: ${examType}
-- Wrap any field containing commas in double quotes
+- Wrap any field containing commas or newlines in double quotes
 - Generate exam-level questions suitable for ${selectedTemplate?.name || 'competitive exams'}
 - Each question should have a clear, concise explanation
 - Subject: "${subject}" | Topic: "${topic || subject}"
+- Use Markdown formatting to make questions highly visible (e.g., **bolding** keywords, using bullet points, or 'code blocks' for readability). VERY IMPORTANT: If you use commas, newlines, or double quotes within any column text (like markdown code blocks or lists), you MUST wrap the entire column text in double quotes and escape internal double quotes by doubling them ("").
+- For math equations, fractions, exponents, or algebraic expressions, use LaTeX formatting wrapped in single $ for inline math (e.g. $x^3 + y^3$) or double $$ for block math.
 - For questions containing multiple statements, premises, or conclusions (such as Syllogisms, Assertion-Reason, or passage-based questions), format the question text to put each statement/premise/conclusion on a new line using a newline character (\n) for readability.
 
 START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
@@ -121,7 +123,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `testara_${subject.replace(/\s+/g, '_')}_${Date.now()}.csv`;
+        link.download = `unmocked_${subject.replace(/\s+/g, '_')}_${Date.now()}.csv`;
         link.click();
         URL.revokeObjectURL(url);
     };

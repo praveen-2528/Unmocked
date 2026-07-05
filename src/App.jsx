@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ExamProvider } from './context/ExamContext';
 import { RoomProvider } from './context/RoomContext';
+import { AIProvider } from './context/AIContext';
 import Setup from './pages/Setup';
 import Test from './pages/Test';
 import Results from './pages/Results';
@@ -20,15 +21,19 @@ import Friends from './pages/Friends';
 import AdminPanel from './pages/AdminPanel';
 import Profile from './pages/Profile';
 import Documents from './pages/Documents';
+import StudyAssistant from './pages/StudyAssistant';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>;
   if (!isAuthenticated) {
     // Save intended destination (e.g. /lobby?room=CODE) so Login can redirect back
     return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
+  }
+  if (user?.must_change_password) {
+    return <Navigate to="/login" state={{ forceChange: true }} replace />;
   }
   return children;
 };
@@ -45,7 +50,7 @@ function AppRoutes() {
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/global-leaderboard" element={<ProtectedRoute><GlobalLeaderboard /></ProtectedRoute>} />
+      <Route path="/global-leaderboard" element={<GlobalLeaderboard />} />
       <Route path="/question-bank" element={<ProtectedRoute><QuestionBank /></ProtectedRoute>} />
       <Route path="/mock-builder" element={<ProtectedRoute><MockBuilder /></ProtectedRoute>} />
       <Route path="/ai-generator" element={<ProtectedRoute><AIGenerator /></ProtectedRoute>} />
@@ -53,6 +58,7 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+      <Route path="/study-assistant" element={<ProtectedRoute><StudyAssistant /></ProtectedRoute>} />
     </Routes>
   );
 }
@@ -62,9 +68,11 @@ function App() {
     <AuthProvider>
       <ExamProvider>
         <RoomProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
+          <AIProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </AIProvider>
         </RoomProvider>
       </ExamProvider>
     </AuthProvider>
@@ -72,3 +80,4 @@ function App() {
 }
 
 export default App;
+

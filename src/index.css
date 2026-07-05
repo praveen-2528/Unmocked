@@ -1,19 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  --primary: #5c6ac4;
-  /* Muted Apple-like Indigo */
-  --primary-hover: #4e5ab0;
-  --bg-color: #0b0f19;
-  /* Deeper slate for contrast */
-  --card-bg: rgba(20, 26, 40, 0.65);
-  /* Softer slate */
-  --card-border: rgba(255, 255, 255, 0.08);
-  /* More subtle border */
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --success: #10b981;
-  --danger: #ef4444;
+  /* User Custom Palette */
+  --c-primary: #934761; /* Buttons */
+  --c-secondary: #7288AE; /* Boxes */
+  --c-accent1: #10B981;
+  --c-accent2: #F1F5F9;
+
+  --primary: #934761;
+  --primary-hover: #7A3A50;
+  --bg-color: #618764; /* Whole background */
+  --card-bg: #7288AE; /* Box backgrounds */
+  --card-border: rgba(255, 255, 255, 0.2); 
+  --text-primary: #FFFFFF; /* White text for dark backgrounds */
+  --text-secondary: #E2E8F0;
+  --success: #10B981;
+  --danger: #EF4444;
 
   --font-primary: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -31,8 +33,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Deep space background */
-  background-color: #050505;
+  background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
@@ -51,15 +52,15 @@ body::after {
   border-radius: 50%;
   filter: blur(120px);
   z-index: -1;
-  opacity: 0.5;
+  opacity: 0.35;
   animation: floatShapes 20s infinite ease-in-out alternate;
 }
 
 body::before {
   width: 600px;
   height: 600px;
-  background: #ef4444;
-  /* Red shape */
+  background: #507653;
+  /* Darker blob */
   top: -100px;
   left: -100px;
 }
@@ -67,8 +68,8 @@ body::before {
 body::after {
   width: 500px;
   height: 500px;
-  background: #64748b;
-  /* Grey shape */
+  background: #7288AE;
+  /* Blue blob */
   bottom: -50px;
   right: -100px;
   animation-delay: -10s;
@@ -306,4 +307,63 @@ h6 {
   background: rgba(148, 163, 184, 0.05);
   color: #94a3b8;
   border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* AI Thinking Block Styles */
+.ai-thinking-active, .ai-thinking-collapsed {
+    margin: 8px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid rgba(139, 92, 246, 0.5);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.thinking-header, .ai-thinking-collapsed summary {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.ai-thinking-collapsed summary:hover {
+    color: var(--text-primary);
+}
+
+.thinking-content {
+    opacity: 0.8;
+    margin-top: 8px;
+    font-style: italic;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 8px;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    min-height: 24px;
+}
+
+.typing-indicator .dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+    40% { transform: scale(1); opacity: 1; }
 }

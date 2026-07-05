@@ -950,3 +950,43 @@
     color: #f87171 !important;
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
 }
+
+/* ─── PRINT STYLES FOR PDF EXPORT ───────────────────────────── */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    .results-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+    .glass {
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .no-print, .results-header-actions, .review-q-footer, .nav-sidebar, .bottom-bar {
+        display: none !important;
+    }
+    .score-card {
+        padding: 1rem !important;
+        border: 2px solid #e2e8f0 !important;
+        page-break-inside: avoid;
+    }
+    .review-card {
+        page-break-inside: avoid;
+        border: 1px solid #cbd5e1 !important;
+        margin-bottom: 1.5rem !important;
+        padding: 1rem !important;
+    }
+    .results-content {
+        gap: 1rem !important;
+    }
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

@@ -6,6 +6,7 @@ import Button from '../components/ui/Button';
 import BadgeIcon from '../components/BadgeSVGs';
 import ContributionCalendar from '../components/ContributionCalendar';
 import QuestionRenderer from '../components/QuestionRenderer';
+import PerformanceCharts from '../components/PerformanceCharts';
 import { 
     ChevronLeft, Award, Clock, Eye, CheckCircle, XCircle, 
     RefreshCw, Flame, Sparkles, Lock, Trophy, Calendar, BookOpen, X 
@@ -275,6 +276,11 @@ const Profile = () => {
                             </Card>
                         </div>
 
+                        {/* Advanced Performance Charts Widget */}
+                        {history && history.length > 0 && (
+                            <PerformanceCharts history={history} />
+                        )}
+
                         {/* Consistency Calendar Widget */}
                         <div className="calendar-section">
                             <ContributionCalendar activity={profile.activity || {}} />
@@ -294,6 +300,9 @@ const Profile = () => {
                                     >
                                         <div className="badge-visual-container">
                                             <BadgeIcon badgeKey={badge.key} size={68} animated={badge.isUnlocked} />
+                                            {badge.isUnlocked && badge.earnedCount > 1 && (
+                                                <div className="badge-multiplier">x{badge.earnedCount}</div>
+                                            )}
                                             {!badge.isUnlocked && (
                                                 <div className="badge-lock-shield">
                                                     <Lock size={15} className="lock-svg" />

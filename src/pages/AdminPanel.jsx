@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Shield, Users, History, Database, Trash2, RefreshCw, AlertTriangle, ArrowLeft, Search, BarChart3, Clock, Play, UserX, FileText, Upload, FileUp } from 'lucide-react';
+import { Shield, Users, History, Database, Trash2, RefreshCw, AlertTriangle, ArrowLeft, Search, BarChart3, Clock, Play, UserX, FileText, Upload, FileUp, Key, GitMerge } from 'lucide-react';
 import './AdminPanel.css';
 import UserProfileModal from '../components/UserProfileModal';
 
@@ -24,6 +24,11 @@ const AdminPanel = () => {
     const [historySearch, setHistorySearch] = useState('');
     const [globalDeleteCode, setGlobalDeleteCode] = useState('');
     const [activeProfileQuery, setActiveProfileQuery] = useState(null);
+
+    // Merge accounts state
+    const [mergeSourceId, setMergeSourceId] = useState('');
+    const [mergeTargetId, setMergeTargetId] = useState('');
+    const [mergeCode, setMergeCode] = useState(null); // Just visual feedback
 
     // Shared Documents state variables
     const [documents, setDocuments] = useState([]);
@@ -100,6 +105,66 @@ const AdminPanel = () => {
                 fetchAdminData();
             } else {
                 setError(data.error || 'Failed to delete user.');
+            }
+        } catch (err) {
+            setError('Error: ' + err.message);
+        }
+    };
+
+    const handleResetPassword = async (id, name) => {
+        if (!window.confirm(`Are you sure you want to reset the password for ${name}? This will generate a temporary 6-digit pin.`)) {
+            return;
+        }
+
+        setError('');
+        setSuccess('');
+        try {
+            const res = await authFetch(`/api/admin/users/${id}/reset-password`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                setSuccess(`Password for ${name} reset successfully! Tell them to log in with this temporary pin: ${data.pin}`);
+            } else {
+                setError(data.error || 'Failed to reset password.');
+            }
+        } catch (err) {
+            setError('Error: ' + err.message);
+        }
+    };
+
+    const handleMergeAccounts = async (e) => {
+        e.preventDefault();
+        if (!mergeSourceId || !mergeTargetId) {
+            return setError('Please select both source and target users.');
+        }
+        if (mergeSourceId === mergeTargetId) {
+            return setError('Source and Target cannot be the same user.');
+        }
+
+        const sourceUser = users.find(u => u.id === parseInt(mergeSourceId));
+        const targetUser = users.find(u => u.id === parseInt(mergeTargetId));
+
+        if (!window.confirm(`🚨 WARNING: You are about to MERGE ALL DATA from ${sourceUser.email} INTO ${targetUser.email}.
+The account ${sourceUser.email} will be PERMANENTLY DELETED. 
+This CANNOT be undone! Proceed?`)) {
+            return;
+        }
+
+        setError('');
+        setSuccess('');
+        try {
+            const res = await authFetch('/api/admin/users/merge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sourceId: parseInt(mergeSourceId), targetId: parseInt(mergeTargetId) })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setSuccess(`Accounts successfully merged into ${targetUser.email}. Source account deleted.`);
+                setMergeSourceId('');
+                setMergeTargetId('');
+                fetchAdminData();
+            } else {
+                setError(data.error || 'Failed to merge accounts.');
             }
         } catch (err) {
             setError('Error: ' + err.message);
@@ -364,6 +429,41 @@ const AdminPanel = () => {
                             </div>
                         </div>
 
+                        <Card className="admin-card merge-card glass" style={{ marginBottom: '2rem' }}>
+                            <h3><GitMerge size={20} style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> Merge Accounts</h3>
+                            <p className="hint">
+                                Merge a duplicate account (Source) into a primary account (Target). All history, badges, and friends will be transferred, and the Source account will be permanently deleted.
+                            </p>
+                            <form onSubmit={handleMergeAccounts} className="global-delete-form" style={{ marginTop: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <select 
+                                    className="global-delete-input" 
+                                    value={mergeSourceId} 
+                                    onChange={e => setMergeSourceId(e.target.value)}
+                                    style={{ flex: 1 }}
+                                >
+                                    <option value="">Select Source Account (To be deleted)...</option>
+                                    {users.filter(u => u.email !== user.email).map(u => (
+                                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                                    ))}
+                                </select>
+                                <span style={{ fontWeight: 'bold', color: 'var(--text-secondary)' }}>INTO ➔</span>
+                                <select 
+                                    className="global-delete-input" 
+                                    value={mergeTargetId} 
+                                    onChange={e => setMergeTargetId(e.target.value)}
+                                    style={{ flex: 1 }}
+                                >
+                                    <option value="">Select Target Account (To keep)...</option>
+                                    {users.map(u => (
+                                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                                    ))}
+                                </select>
+                                <Button variant="primary" type="submit">
+                                    <GitMerge size={16} /> Merge
+                                </Button>
+                            </form>
+                        </Card>
+
                         <div className="table-responsive">
                             <table className="admin-table">
                                 <thead>
@@ -405,13 +505,23 @@ const AdminPanel = () => {
                                                 <td><strong>{u.test_count || 0}</strong> tests</td>
                                                 <td>
                                                     {u.email !== user.email ? (
-                                                        <button 
-                                                            className="delete-action-btn"
-                                                            onClick={() => handleDeleteUser(u.id, u.email)}
-                                                            title="Delete User & History"
-                                                        >
-                                                            <UserX size={16} /> Delete
-                                                        </button>
+                                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                            <button 
+                                                                className="delete-action-btn"
+                                                                onClick={() => handleDeleteUser(u.id, u.email)}
+                                                                title="Delete User & History"
+                                                            >
+                                                                <UserX size={16} /> Delete
+                                                            </button>
+                                                            <button 
+                                                                className="delete-action-btn"
+                                                                style={{ background: 'rgba(234, 179, 8, 0.1)', color: 'var(--warning-color)' }}
+                                                                onClick={() => handleResetPassword(u.id, u.name)}
+                                                                title="Reset Password to 6-digit PIN"
+                                                            >
+                                                                <Key size={16} /> Reset Pass
+                                                            </button>
+                                                        </div>
                                                     ) : (
                                                         <span className="current-user-badge">You</span>
                                                     )}

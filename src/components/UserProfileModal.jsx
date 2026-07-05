@@ -9,6 +9,7 @@ import {
 import QuestionRenderer from './QuestionRenderer';
 import BadgeIcon from './BadgeSVGs';
 import ContributionCalendar from './ContributionCalendar';
+import SolutionsView from './SolutionsView';
 import './UserProfileModal.css';
 
 const UserProfileModal = ({ queryEmail, queryName, onClose }) => {
@@ -307,6 +308,9 @@ const UserProfileModal = ({ queryEmail, queryName, onClose }) => {
                                                 >
                                                     <div className="badge-visual-container">
                                                         <BadgeIcon badgeKey={badge.key} size={58} animated={badge.isUnlocked} />
+                                                        {badge.isUnlocked && badge.earnedCount > 1 && (
+                                                            <div className="badge-multiplier">x{badge.earnedCount}</div>
+                                                        )}
                                                         {!badge.isUnlocked && (
                                                             <div className="badge-lock-shield">
                                                                 <Lock size={13} className="lock-svg" />
@@ -362,167 +366,13 @@ const UserProfileModal = ({ queryEmail, queryName, onClose }) => {
                             <p>Loading exam breakdown...</p>
                         </div>
                     ) : (
-                        /* Detailed Exam Review Screen */
-                        <div className="upm-exam-detail animate-fade-in">
-                            <div className="upm-detail-nav">
-                                <Button variant="ghost" className="btn-sm" onClick={() => setSelectedExamDetail(null)}>
-                                    <ChevronLeft size={16} /> Back to Profile Overview
-                                </Button>
-                                <span className="upm-detail-title">
-                                    {selectedExamDetail.examType.toUpperCase()} Exam — Score: {selectedExamDetail.score}/{selectedExamDetail.total} ({selectedExamDetail.percentage}%)
-                                </span>
-                            </div>
-
-                            {/* Render Heatmap */}
-                            {selectedExamDetail.timeSpent && renderHeatmap(selectedExamDetail.timeSpent, selectedExamDetail.questions)}
-
-                            {/* Questions review with reattempt option */}
-                            <div className="upm-questions-review">
-                                <div className="review-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                                    <h3 className="section-title text-sm font-semibold" style={{ margin: 0 }}>📋 Detailed Questions Review & Reattempt</h3>
-                                    <div className="reattempt-toggle-container glass" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.4rem 0.8rem', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>🧠 Reattempt Mode</span>
-                                        <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px' }}>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={reattemptMode} 
-                                                onChange={(e) => setReattemptMode(e.target.checked)} 
-                                                style={{ opacity: 0, width: 0, height: 0 }}
-                                            />
-                                            <span className="slider" style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, background: reattemptMode ? 'var(--primary)' : 'rgba(255,255,255,0.1)', transition: '.3s', borderRadius: '18px' }}>
-                                                <span style={{ position: 'absolute', content: '""', height: '12px', width: '12px', left: reattemptMode ? '18px' : '3px', bottom: '3px', background: 'white', transition: '.3s', borderRadius: '50%' }}></span>
-                                            </span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                {selectedExamDetail.questions.map((q, idx) => {
-                                    const userAnswer = selectedExamDetail.answers?.[idx];
-                                    const isCorrect = userAnswer !== undefined && userAnswer === q.correctAnswer;
-                                    const isAttempted = userAnswer !== undefined && userAnswer !== -1;
-
-                                    const cardBorderClass = reattemptMode 
-                                        ? 'skipped-border' 
-                                        : (isAttempted ? (isCorrect ? 'correct-border' : 'incorrect-border') : 'skipped-border');
-
-                                    const chosenIdx = reattempts[idx];
-                                    const isReattempted = chosenIdx !== undefined;
-
-                                    return (
-                                        <Card key={idx} className={`review-card ${cardBorderClass} mb-4`}>
-                                            <div className="review-q-header">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <span className="q-number">Question {idx + 1}</span>
-                                                    {selectedExamDetail.timeSpent?.[idx] > 0 && (
-                                                        <span className="q-time text-slate-400" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                                                            <Clock size={14} /> {formatTime(selectedExamDetail.timeSpent[idx])}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {!reattemptMode && (
-                                                    <div className="q-status">
-                                                        {!isAttempted && <span className="status-badge skipped">Skipped</span>}
-                                                        {isAttempted && isCorrect && <span className="status-badge correct"><CheckCircle size={14} /> Correct</span>}
-                                                        {isAttempted && !isCorrect && <span className="status-badge incorrect"><XCircle size={14} /> Incorrect</span>}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="review-q-text mb-4">
-                                                <QuestionRenderer text={q.text} subject={q.subject} />
-                                            </div>
-
-                                            <div className="review-options mb-3">
-                                                {q.options.map((opt, optIdx) => {
-                                                    let optClass = "review-opt ";
-                                                    if (!reattemptMode) {
-                                                        if (optIdx === q.correctAnswer) optClass += "is-correct";
-                                                        else if (userAnswer === optIdx) optClass += "is-wrong";
-                                                    } else {
-                                                        optClass += "clickable ";
-                                                        if (isReattempted) {
-                                                            if (optIdx === q.correctAnswer) optClass += "is-correct";
-                                                            else if (optIdx === chosenIdx && chosenIdx !== q.correctAnswer) optClass += "is-wrong";
-                                                        }
-                                                    }
-
-                                                    return (
-                                                        <div 
-                                                            key={optIdx} 
-                                                            className={optClass}
-                                                            onClick={() => {
-                                                                if (reattemptMode && !isReattempted) {
-                                                                    setReattempts(prev => ({ ...prev, [idx]: optIdx }));
-                                                                }
-                                                            }}
-                                                            style={{ cursor: (reattemptMode && !isReattempted) ? 'pointer' : 'default', display: 'flex', alignItems: 'center', padding: '1rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '0.75rem' }}
-                                                        >
-                                                            <span className="opt-letter" style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', marginRight: '1rem', fontSize: '0.875rem', fontWeight: '600' }}>{String.fromCharCode(65 + optIdx)}</span>
-                                                            <span className="opt-text" style={{ flex: 1 }}>{opt}</span>
-                                                            {!reattemptMode ? (
-                                                                <>
-                                                                    {optIdx === q.correctAnswer && <CheckCircle className="opt-icon success" style={{ marginLeft: '1rem', color: '#34d399' }} size={16} />}
-                                                                    {userAnswer === optIdx && !isCorrect && <XCircle className="opt-icon danger" style={{ marginLeft: '1rem', color: '#f87171' }} size={16} />}
-                                                                </>
-                                                            ) : (
-                                                                isReattempted && (
-                                                                    <>
-                                                                        {optIdx === q.correctAnswer && <CheckCircle className="opt-icon success" style={{ marginLeft: '1rem', color: '#34d399' }} size={16} />}
-                                                                        {optIdx === chosenIdx && chosenIdx !== q.correctAnswer && <XCircle className="opt-icon danger" style={{ marginLeft: '1rem', color: '#f87171' }} size={16} />}
-                                                                    </>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            {reattemptMode && (
-                                                <div className="reattempt-feedback-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingBottom: '1rem', borderBottom: isReattempted && q.explanation ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                                        <span>First Attempt: </span>
-                                                        {isAttempted ? (
-                                                            <span style={{ fontWeight: '600', color: isCorrect ? '#34d399' : '#f87171' }}>
-                                                                Option {String.fromCharCode(65 + userAnswer)} ({isCorrect ? 'Correct' : 'Incorrect'})
-                                                            </span>
-                                                        ) : (
-                                                            <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Skipped</span>
-                                                        )}
-                                                    </div>
-                                                    {isReattempted && (
-                                                        <button 
-                                                            onClick={() => {
-                                                                setReattempts(prev => { const upd = {...prev}; delete upd[idx]; return upd; });
-                                                            }}
-                                                            style={{
-                                                                background: 'none',
-                                                                border: 'none',
-                                                                color: 'var(--primary)',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '0.25rem'
-                                                            }}
-                                                        >
-                                                            <RefreshCw size={12} /> Try Again
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {(!reattemptMode || isReattempted) && q.explanation && (
-                                                <div className="explanation-box mb-4" style={{ marginTop: reattemptMode ? '1rem' : '0' }}>
-                                                    <h5>Explanation</h5>
-                                                    <p>{q.explanation}</p>
-                                                </div>
-                                            )}
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        /* Detailed Exam Review Screen using new SolutionsView */
+                        <SolutionsView 
+                            questions={selectedExamDetail.questions}
+                            answers={selectedExamDetail.answers || {}}
+                            timeSpent={selectedExamDetail.timeSpent || []}
+                            onClose={() => setSelectedExamDetail(null)}
+                        />
                     )}
                 </div>
             </div>

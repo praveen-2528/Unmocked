@@ -23,10 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# SQLite databases
-server/*.db
-server/*.db-shm
-server/*.db-wal
+# SQLite databases (Tracking for EC2 deployment)
+# server/*.db
+# server/*.db-shm
+# server/*.db-wal
 
 # Agent files
 .gemini/

@@ -4,14 +4,14 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-// Detect local vs remote: on tunnel URLs use relative paths (Vite proxies /api to Express)
+// Detect local vs remote: use relative paths when remote (Vite proxies /api to Express)
 const _hostname = window.location.hostname;
 const _isLocal = _hostname === 'localhost' || _hostname === '127.0.0.1' || /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(_hostname);
 const API_URL = _isLocal ? `http://${_hostname}:3001` : '';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(() => localStorage.getItem('testara_token'));
+    const [token, setToken] = useState(() => localStorage.getItem('unmocked_token'));
     const [loading, setLoading] = useState(true);
 
     // Verify token on mount
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
                 setLoading(false);
             })
             .catch(() => {
-                localStorage.removeItem('testara_token');
+                localStorage.removeItem('unmocked_token');
                 setToken(null);
                 setUser(null);
                 setLoading(false);
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Registration failed');
 
-        localStorage.setItem('testara_token', data.token);
+        localStorage.setItem('unmocked_token', data.token);
         setToken(data.token);
         setUser(data.user);
         return data;
@@ -64,14 +64,29 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login failed');
 
-        localStorage.setItem('testara_token', data.token);
+        localStorage.setItem('unmocked_token', data.token);
+        setToken(data.token);
+        setUser(data.user);
+        return data;
+    }, []);
+
+    const forceChangePassword = useCallback(async (email, oldPassword, newPassword) => {
+        const res = await fetch(`${API_URL}/api/auth/force-change-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, oldPassword, newPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to change password');
+
+        localStorage.setItem('unmocked_token', data.token);
         setToken(data.token);
         setUser(data.user);
         return data;
     }, []);
 
     const logout = useCallback(() => {
-        localStorage.removeItem('testara_token');
+        localStorage.removeItem('unmocked_token');
         setToken(null);
         setUser(null);
     }, []);
@@ -98,6 +113,7 @@ export const AuthProvider = ({ children }) => {
             register,
             login,
             logout,
+            forceChangePassword,
             authFetch,
         }}>
             {children}

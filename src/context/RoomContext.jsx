@@ -13,16 +13,13 @@ const LOCAL_SOCKET_URL = isLocal ? `http://${hostname}:3001` : window.location.o
 export const RoomProvider = ({ children }) => {
     const [connected, setConnected] = useState(false);
     const [serverUrl, setServerUrl] = useState(LOCAL_SOCKET_URL);
-    const [tunnelUrl, setTunnelUrl] = useState(null);
-    const [tunnelActive, setTunnelActive] = useState(false);
-    const [tunnelLoading, setTunnelLoading] = useState(false);
-    const [shortUrl, setShortUrl] = useState(null);
     const [roomState, setRoomState] = useState({
         roomCode: null,
         isHost: false,
         hostName: '',
         playerName: '',
         email: null,
+        userId: null,
         roomMode: 'friendly',
         enableChat: true,
         isConductor: false,
@@ -64,7 +61,8 @@ export const RoomProvider = ({ children }) => {
                 s.emit('joinRoom', {
                     code: state.roomCode,
                     playerName: state.playerName,
-                    email: state.email || null
+                    email: state.email || null,
+                    userId: state.userId || null
                 }, (response) => {
                     if (response.success) {
                         console.log(`[Socket] Auto-rejoined room successfully.`);
@@ -108,6 +106,29 @@ export const RoomProvider = ({ children }) => {
             setRoomState(prev => ({ ...prev, results, participants: participants || prev.participants, totalParticipants, allSubmitted }));
         });
 
+        s.on('hostMigrated', ({ newHostId, newHostName, participants }) => {
+            setRoomState(prev => ({
+                ...prev,
+                isHost: s.id === newHostId,
+                isConductor: prev.roomMode === 'friendly' ? (s.id === newHostId) : prev.isConductor,
+                hostName: newHostName,
+                participants: participants || prev.participants
+            }));
+        });
+
+        s.on('friendlyNextQuestion', ({ questionIndex }) => {
+            setRoomState(prev => ({ ...prev, currentQuestionIndex: questionIndex }));
+        });
+
+        s.on('roomState', (state) => {
+            setRoomState(prev => ({
+                ...prev,
+                ...state,
+                isHost: state.hostId === socketRef.current.id,
+                isConductor: state.conductorId === socketRef.current.id,
+            }));
+        });
+
         socketRef.current = s;
         return s;
     }, []);
@@ -120,19 +141,6 @@ export const RoomProvider = ({ children }) => {
         };
     }, [initSocket]);
 
-    // Check tunnel status on mount (handles page refresh/HMR while tunnel is running)
-    useEffect(() => {
-        fetch('/api/tunnel/status')
-            .then(r => r.json())
-            .then(data => {
-                if (data.active && data.url) {
-                    setTunnelUrl(data.url);
-                    setShortUrl(data.shortUrl || data.url);
-                    setTunnelActive(true);
-                }
-            })
-            .catch(() => { });
-    }, []);
 
     const connectSocket = useCallback(() => {
         if (socketRef.current && !socketRef.current.connected) {
@@ -140,36 +148,6 @@ export const RoomProvider = ({ children }) => {
         }
     }, []);
 
-    // Tunnel management
-    const startTunnel = useCallback(async () => {
-        setTunnelLoading(true);
-        try {
-            const res = await fetch('/api/tunnel/start', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-                setTunnelUrl(data.url);
-                setShortUrl(data.shortUrl || data.url);
-                setTunnelActive(true);
-                return data.url;
-            } else {
-                throw new Error(data.error || 'Failed to start tunnel');
-            }
-        } catch (err) {
-            console.error('Tunnel error:', err);
-            throw err;
-        } finally {
-            setTunnelLoading(false);
-        }
-    }, []);
-
-    const stopTunnel = useCallback(async () => {
-        try {
-            await fetch('/api/tunnel/stop', { method: 'POST' });
-        } catch (e) { /* ignore */ }
-        setTunnelUrl(null);
-        setShortUrl(null);
-        setTunnelActive(false);
-    }, []);
 
     // Connect to a remote server URL (for joining via internet link)
     const setRemoteServerUrl = useCallback((url) => {
@@ -207,11 +185,11 @@ export const RoomProvider = ({ children }) => {
         });
     }, []);
 
-    const createRoom = useCallback(async ({ hostName, examType, testFormat, questions, roomMode, enableChat, email }) => {
+    const createRoom = useCallback(async ({ hostName, examType, testFormat, questions, roomMode, enableChat, email, userId }) => {
         const s = await ensureConnected();
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => reject(new Error('Room creation timed out.')), 8000);
-            s.emit('createRoom', { hostName, examType, testFormat, questions, roomMode, enableChat, email }, (response) => {
+            s.emit('createRoom', { hostName, examType, testFormat, questions, roomMode, enableChat, email, userId }, (response) => {
                 clearTimeout(timeout);
                 if (response.success) {
                     setRoomState(prev => ({
@@ -221,6 +199,7 @@ export const RoomProvider = ({ children }) => {
                         hostName,
                         playerName: hostName,
                         email: email || null,
+                        userId: userId || null,
                         roomMode,
                         enableChat: response.room.enableChat !== false,
                         isConductor: response.room.isConductor || false,
@@ -240,19 +219,24 @@ export const RoomProvider = ({ children }) => {
         });
     }, [ensureConnected]);
 
-    const joinRoom = useCallback(async ({ code, playerName, email }) => {
+    const joinRoom = useCallback(async ({ code, playerName, email, userId }) => {
         const s = await ensureConnected();
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => reject(new Error('Join timed out.')), 8000);
-            s.emit('joinRoom', { code: code.toUpperCase(), playerName, email }, (response) => {
+            s.emit('joinRoom', { code: code.toUpperCase(), playerName, email, userId }, (response) => {
                 clearTimeout(timeout);
                 if (response.success) {
                     setRoomState(prev => ({
                         ...prev,
                         roomCode: code.toUpperCase(),
-                        isHost: response.room.participants.find(p => p.name === playerName)?.isHost || false,
+                        isHost: response.room.participants.find(p => 
+                            (userId && p.userId === userId) ||
+                            (email && p.email && p.email.toLowerCase().trim() === email.toLowerCase().trim()) ||
+                            p.name === playerName
+                        )?.isHost || false,
                         playerName,
                         email: email || null,
+                        userId: userId || null,
                         roomMode: response.room.roomMode,
                         enableChat: response.room.enableChat !== false,
                         isConductor: response.room.isConductor || response.room.participants.find(p => p.name === playerName)?.isConductor || false,
@@ -262,6 +246,10 @@ export const RoomProvider = ({ children }) => {
                         participants: response.room.participants,
                         started: response.room.started || false,
                         examStarted: response.room.examStarted || false,
+                        currentQuestionIndex: response.currentQuestionIndex || 0,
+                        alreadySubmitted: response.alreadySubmitted || false,
+                        results: response.results || [],
+                        allSubmitted: response.allSubmitted || false,
                         error: null,
                       }));
                       resolve(response);
@@ -353,10 +341,6 @@ export const RoomProvider = ({ children }) => {
             socket: socketRef.current,
             connected,
             serverUrl,
-            tunnelUrl,
-            shortUrl,
-            tunnelActive,
-            tunnelLoading,
             ...roomState,
             createRoom,
             joinRoom,
@@ -365,8 +349,6 @@ export const RoomProvider = ({ children }) => {
             syncNavigate,
             submitResults,
             getLeaderboard,
-            startTunnel,
-            stopTunnel,
             setRemoteServerUrl,
             resetToLocal,
         }}>

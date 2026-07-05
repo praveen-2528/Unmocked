@@ -15,7 +15,7 @@ const VoiceChat = ({ socket, roomCode, playerName, participants = [] }) => {
     const [speakingPeers, setSpeakingPeers] = useState(new Set());
     const [error, setError] = useState('');
     const [httpsRequired, setHttpsRequired] = useState(false);
-    const [tunnelUrl, setTunnelUrl] = useState('');
+
 
     const localStreamRef = useRef(null);
     const peerConnectionsRef = useRef(new Map()); // socketId -> RTCPeerConnection
@@ -308,15 +308,11 @@ const VoiceChat = ({ socket, roomCode, playerName, participants = [] }) => {
         };
     }, [socket, inVoice, roomCode, createPeerConnection]);
 
-    // Check for HTTPS / Tunnel requirement
+    // Check for HTTPS requirement
     useEffect(() => {
         const isSecure = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         if (!isSecure) {
             setHttpsRequired(true);
-            fetch('/api/tunnel/status')
-                .then(r => r.json())
-                .then(data => { if (data.active && data.url) setTunnelUrl(data.url); })
-                .catch(() => {});
         }
     }, []);
 
@@ -333,13 +329,7 @@ const VoiceChat = ({ socket, roomCode, playerName, participants = [] }) => {
                 <span className="vc-error" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <MicOff size={14} /> HTTPS Required for Mic
                 </span>
-                {tunnelUrl ? (
-                    <a href={`${tunnelUrl}${window.location.pathname}`} className="vc-join-btn" style={{ textDecoration: 'none' }}>
-                        Switch to Tunnel
-                    </a>
-                ) : (
-                    <span className="vc-error" style={{ fontSize: '0.65rem' }}>(Tunnel inactive)</span>
-                )}
+
             </div>
         );
     }

@@ -457,6 +457,20 @@
     opacity: 0.8;
 }
 
+.badge-multiplier {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+
 .badge-details-box {
     display: flex;
     flex-direction: column;

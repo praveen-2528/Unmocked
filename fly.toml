@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for testara
+# fly.toml app configuration file generated for unmocked
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "testara-app" # IMPORTANT: You will need to change this to your unique app name
+app = "unmocked-app" # IMPORTANT: You will need to change this to your unique app name
 primary_region = "iad"
 
 [build]
@@ -11,7 +11,7 @@ primary_region = "iad"
 
 [env]
   PORT = "8080"
-  DB_PATH = "/data/testara.db"
+  DB_PATH = "/data/unmocked.db"
 
 [http_service]
   internal_port = 8080
@@ -22,6 +22,6 @@ primary_region = "iad"
   processes = ["app"]
 
 [[mounts]]
-  source = "testara_data"
+  source = "unmocked_data"
   destination = "/data"
   processes = ["app"]

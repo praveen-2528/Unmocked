@@ -231,9 +231,19 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container animate-fade-in">
             {/* Header */}
-            <div className="dashboard-header">
-                <h1>📈 Performance Dashboard</h1>
-                <p>Track stats, levels, badges, and streaks in one place</p>
+            <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h1>📈 Performance Dashboard</h1>
+                    <p>Track stats, levels, badges, and streaks in one place</p>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <Button variant="outline" onClick={() => navigate('/global-leaderboard')}>
+                        <Award size={16} /> Global Leaderboard
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/friends')}>
+                        <Users size={16} /> Manage Friends
+                    </Button>
+                </div>
             </div>
 
             {/* Layout Grid */}
@@ -371,6 +381,35 @@ const Dashboard = () => {
                         </Card>
                     )}
 
+                    {/* Challenges Widget */}
+                    {gamification?.challenges && gamification.challenges.length > 0 && (
+                        <Card className="challenges-card glass">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <Target size={20} className="text-primary" />
+                                <h3 style={{ margin: 0 }}>Daily Challenges</h3>
+                            </div>
+                            <div className="challenges-grid">
+                                {gamification.challenges.map((challenge) => (
+                                    <div key={challenge.id} className={`challenge-item ${challenge.completed ? 'completed' : ''}`}>
+                                        <div className="challenge-info">
+                                            <h4>{challenge.title}</h4>
+                                            <p>{challenge.description}</p>
+                                        </div>
+                                        <div className="challenge-progress">
+                                            <span className="progress-text">{challenge.progress} / {challenge.goal}</span>
+                                            <div className="progress-bar-bg">
+                                                <div 
+                                                    className="progress-bar-fill" 
+                                                    style={{ width: `${(challenge.progress / challenge.goal) * 100}%`, background: challenge.completed ? 'var(--success)' : 'var(--primary)' }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Badges Showcase Widget */}
                     {gamification?.badges && (
                         <Card className="badges-showcase-card glass">
@@ -385,6 +424,9 @@ const Dashboard = () => {
                                     >
                                         <div className="badge-visual-container">
                                             <BadgeIcon badgeKey={badge.key} size={70} animated={badge.isUnlocked} />
+                                            {badge.isUnlocked && badge.earnedCount > 1 && (
+                                                <div className="badge-multiplier">x{badge.earnedCount}</div>
+                                            )}
                                             {!badge.isUnlocked && (
                                                 <div className="badge-lock-shield">
                                                     <Lock size={16} className="lock-svg" />

@@ -2,27 +2,70 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoom } from '../context/RoomContext';
 import { useExam } from '../context/ExamContext';
+import { useAuth } from '../context/AuthContext';
+import { useAI } from '../context/AIContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Trophy, Clock, ChevronLeft, Users, RefreshCw, ChevronDown, ChevronUp, CheckCircle, XCircle, Eye, X, Award, Crown } from 'lucide-react';
+import { Trophy, Clock, ChevronLeft, Users, RefreshCw, ChevronDown, ChevronUp, CheckCircle, XCircle, Eye, X, Award, Crown, Home, Share2 } from 'lucide-react';
 import UserProfileModal from '../components/UserProfileModal';
 import QuestionRenderer from '../components/QuestionRenderer';
+import domtoimage from 'dom-to-image-more';
 import './Leaderboard.css';
 import './Results.css';
 
 const Leaderboard = () => {
     const navigate = useNavigate();
-    const { results, participants, totalParticipants, allSubmitted, roomCode, getLeaderboard, leaveRoom } = useRoom();
+    const { results, participants, totalParticipants, allSubmitted, roomCode, getLeaderboard, leaveRoom, isHost, socket } = useRoom();
+    const { generateResponse } = useAI();
     const { questions } = useExam();
+    const { user } = useAuth();
     const [expandedPlayer, setExpandedPlayer] = useState(null);
     const [viewingPlayer, setViewingPlayer] = useState(null); // full detail view
     const [activeProfileQuery, setActiveProfileQuery] = useState(null);
+    const [roastGenerated, setRoastGenerated] = useState(false);
 
     useEffect(() => {
         if (roomCode) {
             getLeaderboard().catch(() => { });
         }
     }, [roomCode, getLeaderboard]);
+
+    // Generate Roast Report when everyone finishes
+    useEffect(() => {
+        if (allSubmitted && isHost && roomCode && socket && !roastGenerated && results.length > 0) {
+            setRoastGenerated(true);
+            
+            // Announce that AI is working on it
+            socket.emit('aiRoastMessage', { 
+                code: roomCode, 
+                text: "Analyzing match results and preparing the Roast Report... ⏳" 
+            });
+
+            // Construct prompt from results
+            const sortedResults = [...results].sort((a, b) => b.score - a.score);
+            const winner = sortedResults[0];
+            const losers = sortedResults.slice(1);
+            
+            let prompt = `We just finished a multiplayer test. Here are the results:\n`;
+            prompt += `Winner: ${winner.playerName} with a score of ${winner.score}/${winner.total} (${winner.correct} correct).\n`;
+            if (losers.length > 0) {
+                prompt += `Others:\n`;
+                losers.forEach(l => {
+                    prompt += `- ${l.playerName}: ${l.score}/${l.total} (${l.correct} correct, ${l.incorrect} incorrect).\n`;
+                });
+            }
+            prompt += `\nWrite a funny, slightly roasting post-match analytics report announcing the winner and roasting the losers. Keep it short (under 150 words) and use emojis. Do not use Markdown formatting like bolding or asterisks. Act like a gaming announcer.`;
+
+            generateResponse(prompt).then((roastText) => {
+                if (roastText) {
+                    socket.emit('aiRoastMessage', { 
+                        code: roomCode, 
+                        text: roastText 
+                    });
+                }
+            }).catch(err => console.error("Failed to generate roast:", err));
+        }
+    }, [allSubmitted, isHost, roomCode, socket, roastGenerated, results, generateResponse]);
 
     const formatTotalTime = (seconds) => {
         if (!seconds) return '00:00';
@@ -244,9 +287,53 @@ const Leaderboard = () => {
         });
     });
 
+    const handleShare = async () => {
+        const captureElement = document.getElementById('leaderboard-capture');
+        if (!captureElement) return;
+        
+        try {
+            // Use dom-to-image-more for perfect CSS rendering (gradients, shadows, dim text fix)
+            const blob = await domtoimage.toBlob(captureElement, {
+                bgcolor: '#0f172a', // match dark theme exactly
+                filter: (node) => {
+                    return node.id !== 'share-buttons-container' && node.id !== 'leaderboard-action-buttons';
+                }
+            });
+
+            if (!blob) return;
+
+            // Download the image
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `UnMocked-Leaderboard-${roomCode || 'Local'}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Copy to clipboard if supported
+            try {
+                if (navigator.clipboard && navigator.clipboard.write) {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    await navigator.clipboard.write([item]);
+                    alert("Leaderboard photo saved to clipboard & downloaded!");
+                } else {
+                    alert("Leaderboard photo downloaded! (Clipboard copy not supported on this browser)");
+                }
+            } catch (err) {
+                console.log("Clipboard write failed, but download succeeded:", err);
+                alert("Leaderboard photo downloaded!");
+            }
+        } catch (error) {
+            console.error("Failed to capture leaderboard:", error);
+            alert("Failed to generate image.");
+        }
+    };
+
     // ── Main Leaderboard View ────────────────────────────────────────
     return (
-        <div className="leaderboard-container animate-fade-in">
+        <div id="leaderboard-capture" className="leaderboard-container animate-fade-in" style={{ padding: '20px' }}>
             <div className="leaderboard-header">
                 <h1><Trophy size={32} /> Leaderboard</h1>
                 <p>
@@ -258,11 +345,16 @@ const Leaderboard = () => {
                 {roomCode && (
                     <span className="room-badge">Room: {roomCode}</span>
                 )}
+                <div id="share-buttons-container" style={{ marginTop: '1rem', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <Button variant="secondary" onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.5rem 1rem' }}>
+                        <Share2 size={16} /> Share Leaderboard
+                    </Button>
+                </div>
             </div>
 
             {/* Podium for top 3 */}
-            {results.length >= 2 && (
-                <div className="podium-section">
+            {results.length >= 1 && (
+                <div className="podium-section" style={{ justifyContent: 'center' }}>
                     {results.slice(0, 3).map((r, idx) => (
                         <div key={idx} className={`podium-card podium-${idx + 1}`} style={{ '--podium-color': podiumColors[idx], position: 'relative' }}
                             onClick={() => r.answers && openFullResults(r)}
@@ -416,9 +508,19 @@ const Leaderboard = () => {
                 </table>
             </Card>
 
-            <div className="leaderboard-actions">
-                <Button variant="ghost" onClick={() => navigate('/results')}>
-                    <ChevronLeft size={16} /> My Results
+            <div id="leaderboard-action-buttons" className="leaderboard-actions">
+                <Button variant="ghost" onClick={() => {
+                    if (user) {
+                        const myResult = collectiveResults.find(r => r.email === user.email || r.playerName === user.name);
+                        if (myResult && myResult.answers) {
+                            openFullResults(myResult);
+                            return;
+                        }
+                    }
+                    // Fallback to navigating if we couldn't find local results
+                    navigate('/results');
+                }}>
+                    <Eye size={16} /> My Results
                 </Button>
                 {!allSubmitted && (
                     <Button variant="outline" onClick={handleRefresh}>
@@ -427,6 +529,9 @@ const Leaderboard = () => {
                 )}
                 <Button variant="primary" onClick={handleNewTest}>
                     New Test
+                </Button>
+                <Button variant="outline" onClick={() => { leaveRoom(); navigate('/'); }}>
+                    <Home size={16} /> Home
                 </Button>
             </div>
             {activeProfileQuery && (

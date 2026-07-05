@@ -16,7 +16,7 @@
   |_|\___||___/\__\__,_|_|  \__,_|
 ```
 
-<h1 align="center">🎯 Testara</h1>
+<h1 align="center">🎯 UnMocked</h1>
 
 <p align="center">
   <strong>A premium, multiplayer-ready mock-test platform built for serious exam preparation.</strong><br/>
@@ -48,16 +48,16 @@
 - **CSV Import** — Import questions via CSV format. Paste CSV output from any AI tool and parse it instantly.
 - **File Upload** — Upload `.csv`, `.xlsx`, or `.xls` files directly.
 - **Management Console** — Browse, search, filter, edit, and delete your questions.
-- **Instant Test Generation** — Pick a subject, type the number of questions (e.g., 25), and hit generate. Testara instantly builds a random unique test from your bank.
+- **Instant Test Generation** — Pick a subject, type the number of questions (e.g., 25), and hit generate. UnMocked instantly builds a random unique test from your bank.
 
 ### 🤖 AI Prompt Generator
 - **4-Step Workflow** — Configure → Copy Prompt → Paste AI Output → Import to Question Bank.
 - **Zero API Cost** — Generates a structured prompt you paste into any free AI tool (ChatGPT, Gemini, etc.).
-- **CSV Output** — AI returns questions in CSV format, which Testara parses and imports automatically.
+- **CSV Output** — AI returns questions in CSV format, which UnMocked parses and imports automatically.
 - **Customizable** — Choose exam type, subject, topic, difficulty, and number of questions.
 
 ### 🏆 Global Leaderboard
-- Compare your performance against all Testara users!
+- Compare your performance against all UnMocked users!
 - **Dynamic Podium** features the Top 3 players with scaling bars.
 - Ranks based on **Average Score** across all tests taken.
 
@@ -168,7 +168,7 @@ Perfect for competitive practice — simulate real exam conditions!
 ```bash
 # Clone the repository
 git clone https://github.com/praveen-2528/mockify.git
-cd testara
+cd unmocked
 
 # Install frontend dependencies
 npm install
@@ -299,7 +299,7 @@ Select Template ──▶ Name Your Mock ──▶ Auto-Generates ──▶ Save
 
 ## 📋 Data Format
 
-Testara uses **CSV format** for question data. Generate questions using any AI tool and paste the CSV output:
+UnMocked uses **CSV format** for question data. Generate questions using any AI tool and paste the CSV output:
 
 ```csv
 question,option_a,option_b,option_c,option_d,correct_option,explanation,subject,topic,subtopic,difficulty,question_type,exam_type

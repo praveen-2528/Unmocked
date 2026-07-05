@@ -412,6 +412,20 @@
     opacity: 0.8;
 }
 
+.badge-multiplier {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+
 .badge-details-box {
     display: flex;
     flex-direction: column;
@@ -810,4 +824,74 @@
     .stats-row {
         grid-template-columns: 1fr;
     }
+}
+
+/* Challenges Widget */
+.challenges-card {
+    margin-bottom: 1.5rem;
+}
+
+.challenges-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.challenge-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.challenge-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.challenge-item.completed {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.challenge-info h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.challenge-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.challenge-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 45px;
+}
+
+.progress-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
 }

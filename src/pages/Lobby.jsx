@@ -173,10 +173,12 @@ RULES:
 - correct_option must be a single letter (${optionLetters.join(', ')})
 - question_type should be: MCQ
 - exam_type should be: ${selectedExam}
-- Wrap any field containing commas in double quotes
+- Wrap any field containing commas or newlines in double quotes
 - Generate real exam-level questions suitable for ${currentTemplate.name}
 - Each question should have a clear, concise explanation
 - Use proper subject/topic/subtopic tags matching the exam syllabus
+- Use Markdown formatting to make questions highly visible (e.g., **bolding** keywords, using bullet points, or 'code blocks' for readability). VERY IMPORTANT: If you use commas, newlines, or double quotes within any column text (like markdown code blocks or lists), you MUST wrap the entire column text in double quotes and escape internal double quotes by doubling them ("").
+- For math equations, fractions, exponents, or algebraic expressions, use LaTeX formatting wrapped in single $ for inline math (e.g. $x^3 + y^3$) or double $$ for block math.
 
 START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
 
@@ -269,7 +271,8 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                 questions: parsedQuestions,
                 roomMode,
                 enableChat,
-                email: user?.email
+                email: user?.email,
+                userId: user?.id
             });
         } catch (err) {
             setError(err.message);
@@ -287,7 +290,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         // Check if we have a saved state in localStorage for this specific room code
         let savedState = null;
         try {
-            const savedStr = localStorage.getItem(`testara_mp_state_${targetCode}`);
+            const savedStr = localStorage.getItem(`unmocked_mp_state_${targetCode}`);
             if (savedStr) {
                 const parsed = JSON.parse(savedStr);
                 if (parsed && Date.now() - parsed.timestamp < 3 * 60 * 60 * 1000) {
@@ -309,6 +312,13 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         } else {
             for (let i = 0; i < currentIdx; i++) {
                 initialAnswers[i] = -1;
+            }
+        }
+
+        if (res.playerHistory) {
+            initialAnswers = { ...initialAnswers, ...res.playerHistory.answers };
+            for (const [qIdx, t] of Object.entries(res.playerHistory.timeSpent)) {
+                initialTimeSpent[Number(qIdx)] = t;
             }
         }
 
@@ -346,9 +356,13 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                 setLoading(true);
                 await new Promise(r => setTimeout(r, 600));
                 try {
-                    const res = await room.joinRoom({ code: codeFromLink, playerName: playerName.trim(), email: user?.email });
-                    if (res && res.success && res.room && res.room.started) {
-                        handleLateOrRejoinNavigation(res);
+                    const res = await room.joinRoom({ code: codeFromLink, playerName: playerName.trim(), email: user?.email, userId: user?.id });
+                    if (res && res.success) {
+                        if (res.alreadySubmitted) {
+                            navigate('/leaderboard');
+                        } else if (res.room && res.room.started) {
+                            handleLateOrRejoinNavigation(res);
+                        }
                         setLoading(false);
                         return;
                     }
@@ -366,9 +380,13 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         if (!joinCode.trim() || joinCode.trim().length < 4) return setError('Enter a valid room code or invite link.');
         setLoading(true);
         try {
-            const res = await room.joinRoom({ code: joinCode.trim(), playerName: playerName.trim(), email: user?.email });
-            if (res && res.success && res.room && res.room.started) {
-                handleLateOrRejoinNavigation(res);
+            const res = await room.joinRoom({ code: joinCode.trim(), playerName: playerName.trim(), email: user?.email, userId: user?.id });
+            if (res && res.success) {
+                if (res.alreadySubmitted) {
+                    navigate('/leaderboard');
+                } else if (res.room && res.room.started) {
+                    handleLateOrRejoinNavigation(res);
+                }
             }
         } catch (err) {
             setError(err.message);
@@ -383,20 +401,11 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         setLoading(false);
     };
 
-    const handleGoOnline = async () => {
-        setError('');
-        try { await room.startTunnel(); } catch (err) { setError('Failed to go online: ' + err.message); }
-    };
-
-    const handleGoOffline = async () => { await room.stopTunnel(); };
-
     const getInviteLink = () => {
-        if (room.tunnelUrl && room.roomCode) return `${room.tunnelUrl}?room=${room.roomCode}`;
         return null;
     };
 
     const getShortInviteLink = () => {
-        if (room.shortUrl && room.roomCode) return `${room.shortUrl}?room=${room.roomCode}`;
         return getInviteLink();
     };
 
@@ -427,12 +436,8 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
     };
 
     const copyShareMessage = async () => {
-        const tunnelLink = room.tunnelUrl ? `${room.tunnelUrl}/lobby?room=${room.roomCode}` : null;
         const lanUrl = getLanUrl();
-        let msg = `🎯 Join my Testara room!\n\n`;
-        if (tunnelLink) {
-            msg += `👉 Click to join: ${tunnelLink}\n\n`;
-        }
+        let msg = `🎯 Join my UnMocked room!\n\n`;
         msg += `🏠 Same WiFi: ${lanUrl}/lobby?room=${room.roomCode}\n`;
         msg += `🔑 Room Code: ${room.roomCode}`;
         const success = await copyToClipboard(msg);
@@ -533,52 +538,12 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                                     <p className="share-method-hint">Share this link with friends on the same WiFi network</p>
                                 </div>
 
-                                {/* Internet Link */}
-                                {room.isHost && (
-                                    <div className="share-method">
-                                        <div className="share-method-header">
-                                            <Globe size={15} />
-                                            <span>Internet (Different Networks)</span>
-                                        </div>
-                                        {!room.tunnelActive ? (
-                                            <button className="go-online-btn" onClick={handleGoOnline} disabled={room.tunnelLoading}>
-                                                {room.tunnelLoading ? (
-                                                    <><Loader size={16} className="spin" /> Going online...</>
-                                                ) : (
-                                                    <>🌐 Go Online — Get a shareable link</>
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <div className="invite-link-area">
-                                                <div className="online-badge">
-                                                    <Globe size={14} /> Online — friends can join from anywhere!
-                                                </div>
-                                                {inviteLink ? (
-                                                    <div className="invite-link-row">
-                                                        <input className="invite-link-input" value={getShortInviteLink() || inviteLink} readOnly onClick={e => e.target.select()} />
-                                                        <button className="copy-invite-btn" onClick={copyInviteLink}>
-                                                            {copiedInvite ? <><Check size={14} /> Copied!</> : <><Link2 size={14} /> Copy</>}
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="invite-link-row">
-                                                        <input className="invite-link-input" value="Loading link..." readOnly style={{ opacity: 0.5 }} />
-                                                    </div>
-                                                )}
-                                                <p className="share-method-hint">Share this link with friends anywhere on the internet</p>
-                                                <button className="go-offline-btn" onClick={handleGoOffline}>
-                                                    <Unplug size={14} /> Go Offline
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+
                             </div>
 
                             <div className="room-info-badges">
                                 <span className="info-badge">{currentTemplate?.name || selectedExam?.toUpperCase()}</span>
                                 <span className="info-badge">{roomMode === 'friendly' ? '🎉 Friendly' : '📝 Real Exam'}</span>
-                                {room.tunnelActive && <span className="info-badge online-badge-sm">🌐 Online</span>}
                             </div>
 
                             <div className="participants-section">

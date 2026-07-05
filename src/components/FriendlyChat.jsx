@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, ChevronDown, Move, Maximize2, Users } from 'lucide-react';
+import { MessageSquare, Send, X, ChevronDown, Move, Maximize2, Users, Flame, Frown, Rocket, Skull, PartyPopper, Smile } from 'lucide-react';
 import './FriendlyChat.css';
 
 const FriendlyChat = ({ socket, roomCode, displayName, onUserClick, inline = false }) => {
@@ -19,6 +19,14 @@ const FriendlyChat = ({ socket, roomCode, displayName, onUserClick, inline = fal
     const dragStartRef = useRef({ x: 0, y: 0 });
     const pointerStartRef = useRef({ x: 0, y: 0 });
     const dragDistanceRef = useRef(0);
+
+    // Ensure it correctly sets position on mount when window object is fully sized
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPos({ x: window.innerWidth - 85, y: window.innerHeight - 85 });
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Resizable panel size states
     const [chatSize, setChatSize] = useState({ width: 350, height: 460 });
@@ -63,7 +71,7 @@ const FriendlyChat = ({ socket, roomCode, displayName, onUserClick, inline = fal
 
         socket.on('chatMessage', onChatMessage);
         return () => socket.off('chatMessage', onChatMessage);
-    }, [socket, isOpen]);
+    }, [socket, isOpen, inline]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -76,6 +84,24 @@ const FriendlyChat = ({ socket, roomCode, displayName, onUserClick, inline = fal
         socket.emit('chatSend', { code: roomCode, text });
         setInput('');
     };
+
+    const sendEmote = (emoteKey) => {
+        if (!socket) return;
+        socket.emit('sendEmote', { code: roomCode, emoteKey });
+        // Auto-close chat popup if inline is false (so user can see the emote)
+        // Or keep it open, let's keep it open.
+    };
+
+    const EmojiBar = () => (
+        <div className="chat-emoji-bar">
+            <button onClick={() => sendEmote('flame')} title="Fire"><Flame size={18} color="#f97316" /></button>
+            <button onClick={() => sendEmote('frown')} title="Sad"><Frown size={18} color="#3b82f6" /></button>
+            <button onClick={() => sendEmote('rocket')} title="Rocket"><Rocket size={18} color="#8b5cf6" /></button>
+            <button onClick={() => sendEmote('skull')} title="Dead"><Skull size={18} color="#94a3b8" /></button>
+            <button onClick={() => sendEmote('party')} title="Party"><PartyPopper size={18} color="#ec4899" /></button>
+            <button onClick={() => sendEmote('smile')} title="Laugh"><Smile size={18} color="#eab308" /></button>
+        </div>
+    );
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -283,6 +309,7 @@ const FriendlyChat = ({ socket, roomCode, displayName, onUserClick, inline = fal
                     )}
                 </div>
 
+                <EmojiBar />
                 <div className="chat-input-row">
                     <input
                         type="text"
@@ -411,6 +438,7 @@ const FriendlyChat = ({ socket, roomCode, displayName, onUserClick, inline = fal
                         )}
                     </div>
 
+                    <EmojiBar />
                     {/* Chat Input Area */}
                     <div className="chat-input-row">
                         <input

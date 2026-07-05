@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { saveExam } from '../utils/storage';
 
 const ExamContext = createContext();
 
@@ -21,11 +22,30 @@ export const ExamProvider = ({ children }) => {
         markingScheme: { correct: 2, incorrect: -0.5, unattempted: 0 },
     });
 
-    const updateExamState = (updates) => {
-        setExamState((prev) => ({ ...prev, ...updates }));
-    };
+    const updateExamState = React.useCallback((updates) => {
+        setExamState((prev) => {
+            const newUpdates = typeof updates === 'function' ? updates(prev) : updates;
+            return { ...prev, ...newUpdates };
+        });
+    }, []);
 
-    const resetExam = () => {
+    useEffect(() => {
+        if (examState.testStarted && examState.questions.length > 0) {
+            const savedId = saveExam(examState);
+            if (examState._saveId !== savedId) {
+                setExamState(prev => ({ ...prev, _saveId: savedId }));
+            }
+        }
+    }, [
+        examState.testStarted,
+        examState.currentQuestionIndex,
+        examState.answers,
+        examState.markedForReview,
+        examState.timeSpent,
+        examState.timeLeft
+    ]);
+
+    const resetExam = React.useCallback(() => {
         setExamState({
             examType: null,
             testFormat: null,
@@ -41,9 +61,9 @@ export const ExamProvider = ({ children }) => {
             _saveId: null,
             markingScheme: { correct: 2, incorrect: -0.5, unattempted: 0 },
         });
-    };
+    }, []);
 
-    const loadSavedState = (saved) => {
+    const loadSavedState = React.useCallback((saved) => {
         setExamState({
             examType: saved.examType,
             testFormat: saved.testFormat,
@@ -59,7 +79,7 @@ export const ExamProvider = ({ children }) => {
             _saveId: saved.id,
             markingScheme: saved.markingScheme || { correct: 2, incorrect: -0.5, unattempted: 0 },
         });
-    };
+    }, []);
 
     return (
         <ExamContext.Provider value={{ ...examState, updateExamState, resetExam, loadSavedState }}>

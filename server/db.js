@@ -1,12 +1,13 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { dirname, join } from 'path';
 import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbPath = process.env.DB_PATH || join(__dirname, 'testara.db');
+const dbPath = process.env.DB_PATH || join(__dirname, 'unmocked.db');
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrency
@@ -133,6 +134,11 @@ try {
 } catch (e) { /* column already exists */ }
 
 try {
+    db.exec(`ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0;`);
+    console.log("Migration: Added must_change_password to users table");
+} catch (e) { /* column already exists */ }
+
+try {
     db.exec(`ALTER TABLE test_history ADD COLUMN test_code TEXT;`);
     console.log("Migration: Added test_code to test_history table");
 } catch (e) { /* column already exists */ }
@@ -170,6 +176,11 @@ try {
     console.log("Migration: Created user_badges table");
 } catch (e) { }
 
+try {
+    db.exec(`ALTER TABLE user_badges ADD COLUMN earned_count INTEGER DEFAULT 1;`);
+    console.log("Migration: Added earned_count to user_badges table");
+} catch (e) { /* column already exists */ }
+
 // Shared Documents Migrations
 try {
     db.exec(`
@@ -194,14 +205,71 @@ try {
 
 // Seed admin user if not exists
 try {
-    const adminExists = db.prepare("SELECT 1 FROM users WHERE email = 'admin@testara.com'").get();
+    const adminExists = db.prepare("SELECT 1 FROM users WHERE email = 'admin@unmocked.com'").get();
     if (!adminExists) {
         const hash = bcrypt.hashSync('adminsecure123', 10);
-        db.prepare("INSERT INTO users (name, email, password_hash, role) VALUES ('Admin', 'admin@testara.com', ?, 'admin')").run(hash);
-        console.log("Migration: Seeded default admin user admin@testara.com successfully.");
+        db.prepare("INSERT INTO users (name, email, password_hash, role) VALUES ('Admin', 'admin@unmocked.com', ?, 'admin')").run(hash);
+        console.log("Migration: Seeded default admin user admin@unmocked.com successfully.");
     }
 } catch (e) {
     console.error("Migration: Failed to seed admin user:", e.message);
 }
+
+// Social / Friends Migration
+try {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS friends (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id1 INTEGER NOT NULL,
+            user_id2 INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id1) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id2) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id1, user_id2)
+        );
+    `);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_friends_user1 ON friends(user_id1);`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_friends_user2 ON friends(user_id2);`);
+    console.log("Migration: Created friends table");
+} catch (e) {
+    console.error("Migration: Failed to create friends table:", e.message);
+}
+
+try {
+    db.exec(`ALTER TABLE friends RENAME COLUMN user_id TO user_id1;`);
+    db.exec(`ALTER TABLE friends RENAME COLUMN friend_id TO user_id2;`);
+    console.log("Migration: Renamed columns in friends table to user_id1 and user_id2");
+} catch(e) { /* columns already renamed or table doesn't have them */ }
+
+// ─── Daily Automatic Backup System ──────────────────────────────────
+// Store backups safely outside the project folder so they aren't lost if the project is deleted
+const BACKUP_DIR = process.env.BACKUP_PATH || join(process.env.USERPROFILE || 'C:\\Users\\manus', 'Desktop', 'history');
+
+function performDailyBackup() {
+    if (!fs.existsSync(BACKUP_DIR)) {
+        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+
+    // Always use the exact same filename so it's a single file
+    const backupFile = join(BACKUP_DIR, 'unmocked-total-backup.db');
+    
+    // Perform the backup. SQLite's backup API will safely overwrite/merge 
+    // the destination file with the complete current state of the database.
+    db.backup(backupFile)
+      .then(() => {
+          const dateStr = new Date().toLocaleString();
+          console.log(`[Backup] Successfully synced total database backup at ${dateStr}`);
+      })
+      .catch((err) => {
+          console.error(`[Backup] Failed to backup database:`, err);
+      });
+}
+
+// Initial check on startup
+setTimeout(performDailyBackup, 5000);
+
+// Run backup every hour to ensure the single file is always up to date
+setInterval(performDailyBackup, 60 * 60 * 1000);
 
 export default db;

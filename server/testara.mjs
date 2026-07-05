@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { join } from 'path';
 
-const db = new Database(join(process.cwd(), 'testara.db'));
+const db = new Database(join(process.cwd(), 'unmocked.db'));
 try {
   db.exec("ALTER TABLE test_history ADD COLUMN test_name TEXT DEFAULT 'Untitled Test'");
   console.log("Added test_name");

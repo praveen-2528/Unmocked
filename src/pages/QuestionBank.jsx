@@ -143,9 +143,11 @@ const QuestionBank = () => {
                 testStarted: true,
                 currentQuestionIndex: 0,
                 answers: {},
-                markedForReview: {},
+                markedForReview: [],
                 timeSpent: new Array(data.questions.length).fill(0),
                 isMultiplayer: false,
+                examType: 'ssc',
+                testFormat: 'full',
             });
             navigate('/test');
         } catch (err) {

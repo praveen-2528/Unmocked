@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useExam } from '../context/ExamContext';
@@ -5,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRoom } from '../context/RoomContext';
 import { EXAM_TEMPLATES } from '../utils/examTemplates';
 import { parseCSVString } from '../utils/csvParser';
+import AIChatWidget from '../components/AIChatWidget';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { 
@@ -77,6 +79,7 @@ const Setup = () => {
     // PDF Viewer Modal state
     const [pdfViewerUrl, setPdfViewerUrl] = useState(null);
     const [pdfViewerTitle, setPdfViewerTitle] = useState('');
+    const [showSoloModal, setShowSoloModal] = useState(false);
 
     // Poll active rooms on mount
     useEffect(() => {
@@ -93,7 +96,8 @@ const Setup = () => {
 
         fetchActiveRooms();
         const interval = setInterval(fetchActiveRooms, 4000);
-        return () => clearInterval(interval);
+        
+    return () => clearInterval(interval);
     }, []);
 
     // Reactive Room Preview Fetcher
@@ -117,7 +121,7 @@ const Setup = () => {
     useEffect(() => {
         // Find all saved multiplayer states
         const keys = Object.keys(localStorage);
-        const mpKeys = keys.filter(k => k.startsWith('testara_mp_state_'));
+        const mpKeys = keys.filter(k => k.startsWith('unmocked_mp_state_'));
         if (mpKeys.length > 0) {
             const states = [];
             mpKeys.forEach(k => {
@@ -140,7 +144,7 @@ const Setup = () => {
                 if (Date.now() - mostRecent.timestamp < 3 * 60 * 60 * 1000) {
                     setSavedMpState(mostRecent);
                 } else {
-                    localStorage.removeItem(`testara_mp_state_${mostRecent.roomCode}`);
+                    localStorage.removeItem(`unmocked_mp_state_${mostRecent.roomCode}`);
                 }
             }
         }
@@ -148,7 +152,7 @@ const Setup = () => {
 
     const handleDiscardSavedMpState = () => {
         if (savedMpState) {
-            localStorage.removeItem(`testara_mp_state_${savedMpState.roomCode}`);
+            localStorage.removeItem(`unmocked_mp_state_${savedMpState.roomCode}`);
             setSavedMpState(null);
         }
     };
@@ -333,7 +337,7 @@ const Setup = () => {
                 .then(data => {
                     if (data.success && data.schedule) {
                         setTodaySchedule(data.schedule);
-                        const key = `testara_study_checked_${user?.email || 'guest'}_${data.schedule.date}`;
+                        const key = `unmocked_study_checked_${user?.email || 'guest'}_${data.schedule.date}`;
                         const saved = localStorage.getItem(key);
                         if (saved) {
                             setCheckedTopics(JSON.parse(saved));
@@ -350,7 +354,7 @@ const Setup = () => {
         if (!todaySchedule) return;
         const newChecked = { ...checkedTopics, [topicIndex]: !checkedTopics[topicIndex] };
         setCheckedTopics(newChecked);
-        const key = `testara_study_checked_${user?.email || 'guest'}_${todaySchedule.date}`;
+        const key = `unmocked_study_checked_${user?.email || 'guest'}_${todaySchedule.date}`;
         localStorage.setItem(key, JSON.stringify(newChecked));
     };
 
@@ -468,7 +472,7 @@ const Setup = () => {
                 // Joined late! Check if we have a saved state in localStorage for this specific room code
                 let savedState = null;
                 try {
-                    const savedStr = localStorage.getItem(`testara_mp_state_${targetCode}`);
+                    const savedStr = localStorage.getItem(`unmocked_mp_state_${targetCode}`);
                     if (savedStr) {
                         const parsed = JSON.parse(savedStr);
                         if (parsed && Date.now() - parsed.timestamp < 3 * 60 * 60 * 1000) {
@@ -498,6 +502,13 @@ const Setup = () => {
                     }
                 }
 
+                if (res.playerHistory) {
+                    initialAnswers = { ...initialAnswers, ...res.playerHistory.answers };
+                    for (const [qIdx, t] of Object.entries(res.playerHistory.timeSpent)) {
+                        initialTimeSpent[Number(qIdx)] = t;
+                    }
+                }
+
                 updateExamState({
                     examType: et,
                     testFormat: tf,
@@ -524,6 +535,9 @@ const Setup = () => {
             setMpLoading(false);
         }
     };
+
+    
+
 
     // Process stats for charts
     const stats = useMemo(() => {
@@ -567,6 +581,13 @@ const Setup = () => {
 
     return (
         <div className="home-dashboard-container animate-fade-in">
+            {/* Dynamic Aurora Background */}
+            <div className="aurora-bg">
+                <div className="aurora-blob blob-1"></div>
+                <div className="aurora-blob blob-2"></div>
+                <div className="aurora-blob blob-3"></div>
+            </div>
+
             {/* Rejoin Multiplayer Banner */}
             {savedMpState && (
                 <div className="rejoin-banner glass animate-fade-in" style={{
@@ -601,6 +622,8 @@ const Setup = () => {
             {/* User Header Bar */}
             <div className="user-bar glass">
                 <span className="user-greeting">👋 Welcome back, <strong style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate('/profile')} title="Go to profile">{user?.name || 'Guest'}</strong></span>
+                    
+
                 <div className="user-actions">
                     {user?.role === 'admin' && (
                         <button className="admin-btn" onClick={() => navigate('/admin')} title="Admin Panel" style={{
@@ -632,9 +655,12 @@ const Setup = () => {
                 </div>
             </div>
 
+            
+
+
             {/* Hero Brand Title */}
             <div className="setup-header">
-                <h1>Testara</h1>
+                <h1>UnMocked</h1>
                 <p>Collaborative competitive exam preparation hub</p>
             </div>
 
@@ -731,7 +757,7 @@ const Setup = () => {
                                             setMpJoinLink(e.target.value);
                                             if (e.target.value.trim()) setMpJoinCode(''); // clear other input
                                         }}
-                                        placeholder="https://testara.trycloudflare.com/?room=..."
+                                        placeholder="https://your-domain.com/lobby?room=..."
                                     />
                                 </div>
                             </div>
@@ -852,140 +878,183 @@ const Setup = () => {
                         </div>
                     </Card>
 
-                    {/* Shared Documents & Notes Portal Card */}
-                    <Card 
-                        className="home-card documents-card glass hover-lift" 
-                        style={{ 
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1rem',
-                            border: '1px solid rgba(99, 102, 241, 0.2)',
-                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%)'
-                        }} 
-                        onClick={() => navigate('/documents')}
-                    >
-                        <div className="card-header" style={{ marginBottom: 0, paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '1rem' }}>
-                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                <div className="title-icon" style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '0.6rem', borderRadius: '10px', flexShrink: 0 }}>
-                                    <FileText size={22} className="text-primary" style={{ color: '#a5b4fc' }} />
-                                </div>
-                                <div>
-                                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>Study Materials & Notes</h2>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.15rem 0 0 0' }}>Access references, formulas, and study papers shared by admins</p>
-                                </div>
-                            </div>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={(e) => { e.stopPropagation(); navigate('/documents'); }}
-                                className="more-docs-btn"
-                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.2rem', height: 'auto', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
-                            >
-                                More Documents &rarr;
-                            </Button>
-                        </div>
+                    </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
-                            {recentDocs.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                    No shared documents available.
-                                </div>
-                            ) : (
-                                recentDocs.map(doc => (
-                                    <div 
-                                        key={doc.id} 
-                                        style={{ 
-                                            display: 'flex', 
-                                            justifyContent: 'space-between', 
-                                            alignItems: 'center', 
-                                            background: 'rgba(255, 255, 255, 0.03)', 
-                                            padding: '0.6rem 1rem', 
-                                            borderRadius: '10px', 
-                                            border: '1px solid rgba(255, 255, 255, 0.05)',
-                                            gap: '1rem'
-                                        }}
-                                        onClick={(e) => e.stopPropagation()} // Prevent card navigation
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', overflow: 'hidden', flex: 1 }}>
-                                            <FileText size={16} style={{ color: '#818cf8', flexShrink: 0 }} />
-                                            <span 
-                                                style={{ 
-                                                    fontSize: '0.85rem', 
-                                                    fontWeight: '600', 
-                                                    color: 'var(--text-primary)', 
-                                                    overflow: 'hidden', 
-                                                    textOverflow: 'ellipsis', 
-                                                    whiteSpace: 'nowrap' 
-                                                }}
-                                                title={doc.title}
-                                            >
-                                                {doc.title}
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc.id, doc.filename, doc.file_type); }}
-                                                disabled={downloadingDocId === doc.id}
-                                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', height: 'auto' }}
-                                            >
-                                                {downloadingDocId === doc.id ? (
-                                                    <Loader2 size={12} className="animate-spin" />
-                                                ) : (
-                                                    <Download size={12} />
-                                                )}
-                                                <span>Download</span>
-                                            </Button>
-                                            {doc.filename.toLowerCase().endsWith('.pdf') ? (
-                                                <Button 
-                                                    variant="primary" 
-                                                    size="sm" 
-                                                    onClick={(e) => { e.stopPropagation(); handleViewPDFDocument(doc.id, doc.filename, doc.file_type); }}
-                                                    disabled={downloadingDocId === doc.id}
-                                                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', height: 'auto' }}
-                                                >
-                                                    View
-                                                </Button>
-                                            ) : (
-                                                <Button 
-                                                    variant="primary" 
-                                                    size="sm" 
-                                                    onClick={(e) => { e.stopPropagation(); navigate('/documents'); }}
-                                                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', height: 'auto' }}
-                                                >
-                                                    View
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                            {allDocsCount > 2 && (
-                                <div style={{ textAlign: 'right', marginTop: '0.25rem' }}>
-                                    <span 
-                                        onClick={(e) => { e.stopPropagation(); navigate('/documents'); }}
-                                        style={{ fontSize: '0.8rem', color: '#818cf8', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}
-                                    >
-                                        Browse all documents ({allDocsCount}) &rarr;
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
+                {/* COLUMN 2: AI Assistant */}
+                <div className="home-ai-column">
+                    <AIChatWidget height="calc(100vh - 280px)" user={user} history={history} />
+                </div>
+            </div>
 
-                    {/* Practice Solo Card */}
-                    <Card className="home-card practice-card glass">
-                        <div className="card-header">
+            <div className="home-grid" style={{ marginTop: '0' }}>
+                <div className="home-actions-column">
+                    {/* Practice Solo Card (Shrunk) */}
+                    <Card className="home-card practice-card glass" style={{ cursor: 'pointer' }} onClick={() => setShowSoloModal(true)}>
+                        <div className="card-header" style={{ marginBottom: '1rem' }}>
                             <div className="title-icon"><Target size={22} className="text-indigo" /></div>
                             <div>
                                 <h2>Practice Solo</h2>
                                 <p>Self-paced test preparation wizard</p>
                             </div>
                         </div>
+                        <Button variant="primary" style={{ width: '100%' }} onClick={(e) => { e.stopPropagation(); setShowSoloModal(true); }}>
+                            Launch Practice Wizard
+                        </Button>
+                    </Card>
+                \n                    
+                    {/* Quick Explore Card (Replaces Chart) */}
+                    <Card className="home-card glass">
+                        <div className="card-header" style={{ marginBottom: '1.25rem' }}>
+                            <div className="title-icon"><LayoutTemplate size={22} className="text-primary" /></div>
+                            <div>
+                                <h2>Explore More</h2>
+                                <p>Quick access to all UnMocked tools</p>
+                            </div>
+                        </div>
+                        <div className="quick-actions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.75rem' }}>
+                            <button className="quick-action-btn primary-tint" onClick={() => navigate('/mock-builder')}>
+                    <LayoutTemplate size={24} />
+                    <span>Mock Builder</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/question-bank')}>
+                    <Library size={24} />
+                    <span>Question Bank</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/global-leaderboard')}>
+                    <Trophy size={24} />
+                    <span>Global Leaderboard</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/dashboard')}>
+                    <BarChart3 size={24} />
+                    <span>Full Analytics</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/profile')}>
+                    <User size={24} />
+                    <span>My Profile</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/friends')}>
+                    <UserPlus size={24} />
+                    <span>Friends</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/saved')}>
+                    <Folder size={24} />
+                    <span>Saved Exams</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/documents')}>
+                    <FileText size={24} />
+                    <span>Shared Docs</span>
+                </button>
+                <button className="quick-action-btn ai-tint" onClick={() => navigate('/ai-generator')}>
+                    <Sparkles size={24} />
+                    <span>AI Prompt Generator</span>
+                </button>
+                        </div>
+                    </Card>
 
-                        <div className="solo-practice-wizard">
+                </div>
+                <div className="home-dashboard-column">
+                    {/* Performance Graphs Card */}
+                    <Card className="home-card graph-card glass">
+                        <div className="card-header">
+                            <div className="title-icon"><TrendingUp size={22} className="text-emerald" /></div>
+                            <div>
+                                <h2>Performance Overview</h2>
+                                <p>Analyze your solo practice results</p>
+                            </div>
+                        </div>
+
+                        {historyLoading ? (
+                            <div className="graph-placeholder"><Loader className="spin" /> Loading stats...</div>
+                        ) : history.length === 0 ? (
+                            <div className="graph-placeholder empty">
+                                <BarChart3 size={32} />
+                                <p>No practice test data available yet.</p>
+                                <span className="sub-hint">Perform some practice mock tests or CSV uploads to view your score trends and stats graph.</span>
+                            </div>
+                        ) : (
+                            <div className="dashboard-stats-content">
+                                {/* SVG Graph */}
+                                {chartData ? (
+                                    <div className="svg-trend-wrap">
+                                        <svg viewBox={`0 0 ${chartData.W} ${chartData.H}`} className="dashboard-trend-chart">
+                                            <defs>
+                                                <linearGradient id="areaGradHome" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                                                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                                                </linearGradient>
+                                            </defs>
+                                            
+                                            {/* Y Grid lines */}
+                                            {[0, 50, 100].map(pct => {
+                                                const y = chartData.P + (1 - pct / 100) * (chartData.H - chartData.P * 2);
+                                                return (
+                                                    <g key={pct}>
+                                                        <line x1={chartData.P} y1={y} x2={chartData.W - chartData.P} y2={y} className="grid-line" />
+                                                        <text x={chartData.P - 6} y={y + 4} className="axis-label" textAnchor="end">{pct}%</text>
+                                                    </g>
+                                                );
+                                            })}
+
+                                            <path d={chartData.areaD} fill="url(#areaGradHome)" />
+                                            <path d={chartData.pathD} className="trend-line-emerald" />
+                                            
+                                            {chartData.points.map((p, i) => (
+                                                <g key={i}>
+                                                    <circle cx={p.x} cy={p.y} r="4.5" className="trend-dot-emerald" />
+                                                    <title>{p.date}: {p.pct}%</title>
+                                                </g>
+                                            ))}
+                                        </svg>
+                                    </div>
+                                ) : (
+                                    <div className="graph-placeholder empty">
+                                        <p>Not enough test history to plot trend line.</p>
+                                        <span className="sub-hint">Complete at least 2 tests to unlock the trend graph.</span>
+                                    </div>
+                                )}
+
+                                {/* Key stats grid */}
+                                {stats && (
+                                    <div className="quick-stats-grid">
+                                        <div className="quick-stat-box">
+                                            <span className="stat-num text-success">{stats.avgScore.toFixed(0)}%</span>
+                                            <span className="stat-lbl">Average Score</span>
+                                        </div>
+                                        <div className="quick-stat-box">
+                                            <span className="stat-num text-gold">{stats.bestScore.toFixed(0)}%</span>
+                                            <span className="stat-lbl">Best Score</span>
+                                        </div>
+                                        <div className="quick-stat-box">
+                                            <span className="stat-num">{stats.totalTests}</span>
+                                            <span className="stat-lbl">Exams Taken</span>
+                                        </div>
+                                        <div className="quick-stat-box">
+                                            <span className="stat-num">{formatDuration(stats.totalTime)}</span>
+                                            <span className="stat-lbl">Total Time</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            </div>
+
+            {showScheduleModal && (
+                <ScheduleModal onClose={() => setShowScheduleModal(false)} />
+            )}
+
+            {showSoloModal && (
+                <div className="pdf-viewer-modal-backdrop" onClick={() => setShowSoloModal(false)}>
+                    <div className="pdf-viewer-modal-content glass" onClick={(e) => e.stopPropagation()} style={{ padding: '2rem', overflowY: 'auto', height: '90vh', maxWidth: '1000px', width: '90%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                <Target size={24} className="text-indigo" />
+                                <h2 style={{ margin: 0 }}>Practice Solo Wizard</h2>
+                            </div>
+                            <button className="pdf-viewer-close-btn" onClick={() => setShowSoloModal(false)}>&times;</button>
+                        </div>
+                                                <div className="solo-practice-wizard">
                             <div className="steps-indicator inline-steps">
                                 <div className={`step ${step >= 1 ? 'active' : ''}`} onClick={() => setStep(1)}>1. Exam</div>
                                 <div className="step-line"></div>
@@ -1125,237 +1194,10 @@ const Setup = () => {
                                 </div>
                             )}
                         </div>
-                    </Card>
+                    </div>
                 </div>
-
-                {/* RIGHT COLUMN: Graph and quote */}
-                <div className="home-dashboard-column">
-                    
-                    {/* Today's Study Goals Card */}
-                    <Card className="home-card study-goals-card glass">
-                        <div className="card-header">
-                            <div className="title-icon"><Calendar size={22} className="text-primary" /></div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                <div>
-                                    <h2>Today's Study Plan</h2>
-                                    <p>{todaySchedule ? `${new Date(todaySchedule.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • ${todaySchedule.day}` : 'Check today\'s schedule'}</p>
-                                </div>
-                                <Button variant="outline" className="btn-xs" onClick={() => setShowScheduleModal(true)} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', height: 'auto' }}>
-                                    📅 Full Schedule
-                                </Button>
-                            </div>
-                        </div>
-
-                        {todaySchedule ? (
-                            <div className="study-goals-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {[
-                                    { key: 1, label: 'Logical Reasoning', topic: todaySchedule.topic1 },
-                                    { key: 2, label: 'Quantitative Aptitude', topic: todaySchedule.topic2 },
-                                    { key: 3, label: 'English Language', topic: todaySchedule.topic3 },
-                                    { key: 4, label: 'General Studies & GK', topic: todaySchedule.topic4 }
-                                ].map((t) => {
-                                    if (!t.topic) return null;
-                                    return (
-                                        <div 
-                                            key={t.key} 
-                                            className={`study-goal-item glass ${checkedTopics[t.key] ? 'completed' : ''}`}
-                                            onClick={() => handleTopicCheckToggle(t.key)}
-                                            style={{ 
-                                                display: 'flex', 
-                                                alignItems: 'center', 
-                                                gap: '0.85rem', 
-                                                padding: '0.75rem 1rem', 
-                                                borderRadius: '10px', 
-                                                border: '1px solid rgba(255, 255, 255, 0.04)', 
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                background: checkedTopics[t.key] ? 'rgba(16, 185, 129, 0.05)' : 'rgba(30, 41, 59, 0.2)'
-                                            }}
-                                        >
-                                            <input 
-                                                type="checkbox" 
-                                                checked={checkedTopics[t.key] || false}
-                                                onChange={() => {}} // handled by div click
-                                                id={`topic-check-${t.key}`}
-                                                style={{ cursor: 'pointer', pointerEvents: 'none' }}
-                                            />
-                                            <div className="study-goal-content" style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', textAlign: 'left' }}>
-                                                <span className="goal-subject" style={{ fontSize: '0.7rem', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.label}</span>
-                                                <span className="goal-topic" style={{ fontSize: '0.85rem', color: checkedTopics[t.key] ? 'var(--text-secondary)' : 'var(--text-primary)', textDecoration: checkedTopics[t.key] ? 'line-through' : 'none' }}>{t.topic}</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                
-                                {/* Daily Progress Bar */}
-                                <div className="study-progress-section" style={{ marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                                    {(() => {
-                                        const total = [todaySchedule.topic1, todaySchedule.topic2, todaySchedule.topic3, todaySchedule.topic4].filter(Boolean).length;
-                                        const completed = Object.keys(checkedTopics).filter(k => checkedTopics[k] && [todaySchedule.topic1, todaySchedule.topic2, todaySchedule.topic3, todaySchedule.topic4][k-1]).length;
-                                        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-                                        return (
-                                            <>
-                                                <div className="study-progress-lbl" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '0.35rem' }}>
-                                                    <span>Daily Progress</span>
-                                                    <span style={{ color: pct === 100 ? '#10b981' : 'var(--text-primary)' }}>{completed}/{total} ({pct}%)</span>
-                                                </div>
-                                                <div className="study-progress-bar-bg" style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                    <div className="study-progress-bar-fill" style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? 'var(--success)' : 'var(--primary)', transition: 'width 0.3s ease' }}></div>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="study-goals-empty text-center" style={{ padding: '1rem' }}>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>No specific study goals scheduled for today.</p>
-                                <Button variant="outline" className="btn-sm" onClick={() => setShowScheduleModal(true)}>
-                                    📅 View Full Schedule
-                                </Button>
-                            </div>
-                        )}
-                    </Card>
-
-                    {/* Performance Graphs Card */}
-                    <Card className="home-card graph-card glass">
-                        <div className="card-header">
-                            <div className="title-icon"><TrendingUp size={22} className="text-emerald" /></div>
-                            <div>
-                                <h2>Performance Overview</h2>
-                                <p>Analyze your solo practice results</p>
-                            </div>
-                        </div>
-
-                        {historyLoading ? (
-                            <div className="graph-placeholder"><Loader className="spin" /> Loading stats...</div>
-                        ) : history.length === 0 ? (
-                            <div className="graph-placeholder empty">
-                                <BarChart3 size={32} />
-                                <p>No practice test data available yet.</p>
-                                <span className="sub-hint">Perform some practice mock tests or CSV uploads to view your score trends and stats graph.</span>
-                            </div>
-                        ) : (
-                            <div className="dashboard-stats-content">
-                                {/* SVG Graph */}
-                                {chartData ? (
-                                    <div className="svg-trend-wrap">
-                                        <svg viewBox={`0 0 ${chartData.W} ${chartData.H}`} className="dashboard-trend-chart">
-                                            <defs>
-                                                <linearGradient id="areaGradHome" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                                                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                                                </linearGradient>
-                                            </defs>
-                                            
-                                            {/* Y Grid lines */}
-                                            {[0, 50, 100].map(pct => {
-                                                const y = chartData.P + (1 - pct / 100) * (chartData.H - chartData.P * 2);
-                                                return (
-                                                    <g key={pct}>
-                                                        <line x1={chartData.P} y1={y} x2={chartData.W - chartData.P} y2={y} className="grid-line" />
-                                                        <text x={chartData.P - 6} y={y + 4} className="axis-label" textAnchor="end">{pct}%</text>
-                                                    </g>
-                                                );
-                                            })}
-
-                                            <path d={chartData.areaD} fill="url(#areaGradHome)" />
-                                            <path d={chartData.pathD} className="trend-line-emerald" />
-                                            
-                                            {chartData.points.map((p, i) => (
-                                                <g key={i}>
-                                                    <circle cx={p.x} cy={p.y} r="4.5" className="trend-dot-emerald" />
-                                                    <title>{p.date}: {p.pct}%</title>
-                                                </g>
-                                            ))}
-                                        </svg>
-                                    </div>
-                                ) : (
-                                    <div className="graph-placeholder empty">
-                                        <p>Not enough test history to plot trend line.</p>
-                                        <span className="sub-hint">Complete at least 2 tests to unlock the trend graph.</span>
-                                    </div>
-                                )}
-
-                                {/* Key stats grid */}
-                                {stats && (
-                                    <div className="quick-stats-grid">
-                                        <div className="quick-stat-box">
-                                            <span className="stat-num text-success">{stats.avgScore.toFixed(0)}%</span>
-                                            <span className="stat-lbl">Average Score</span>
-                                        </div>
-                                        <div className="quick-stat-box">
-                                            <span className="stat-num text-gold">{stats.bestScore.toFixed(0)}%</span>
-                                            <span className="stat-lbl">Best Score</span>
-                                        </div>
-                                        <div className="quick-stat-box">
-                                            <span className="stat-num">{stats.totalTests}</span>
-                                            <span className="stat-lbl">Exams Taken</span>
-                                        </div>
-                                        <div className="quick-stat-box">
-                                            <span className="stat-num">{formatDuration(stats.totalTime)}</span>
-                                            <span className="stat-lbl">Total Time</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </Card>
-
-                    {/* Rotating Quote Card */}
-                    <Card className="home-card quote-card glass" key={quoteIdx}>
-                        <div className="quote-icon-bubble"><Quote size={20} /></div>
-                        <p className="quote-text animate-fade-in">
-                            "{currentQuote.text}"
-                        </p>
-                        <span className="quote-author">— {currentQuote.author}</span>
-                    </Card>
-
-                </div>
-            </div>
-
-            {/* Footer Navigation Bar */}
-            <div className="setup-secondary-actions glass">
-                <button className="secondary-action-btn primary-tint" onClick={() => navigate('/mock-builder')}>
-                    <LayoutTemplate size={16} />
-                    <span>Mock Builder</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/question-bank')}>
-                    <Library size={16} />
-                    <span>Question Bank</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/global-leaderboard')}>
-                    <Trophy size={16} />
-                    <span>Global Leaderboard</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/dashboard')}>
-                    <BarChart3 size={16} />
-                    <span>Full Analytics</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/profile')}>
-                    <User size={16} />
-                    <span>My Profile</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/friends')}>
-                    <UserPlus size={16} />
-                    <span>Friends</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/saved')}>
-                    <Folder size={16} />
-                    <span>Saved Exams</span>
-                </button>
-                <button className="secondary-action-btn" onClick={() => navigate('/documents')}>
-                    <FileText size={16} />
-                    <span>Shared Docs</span>
-                </button>
-                <button className="secondary-action-btn ai-tint" onClick={() => navigate('/ai-generator')}>
-                    <Sparkles size={16} />
-                    <span>AI Prompt Generator</span>
-                </button>
-            </div>
-            {showScheduleModal && (
-                <ScheduleModal onClose={() => setShowScheduleModal(false)} />
             )}
+
             {pdfViewerUrl && (
                 <div className="pdf-viewer-modal-backdrop" onClick={handleClosePDFViewer}>
                     <div className="pdf-viewer-modal-content glass" onClick={(e) => e.stopPropagation()}>

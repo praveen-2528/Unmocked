@@ -9,7 +9,12 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://127.0.0.1:3001',
+      },
+      '/ollama-api': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ollama-api/, '/api/ollama')
       },
       '/socket.io': {
         target: 'http://localhost:3001',

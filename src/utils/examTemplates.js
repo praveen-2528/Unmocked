@@ -24,6 +24,59 @@ export const EXAM_TEMPLATES = {
             },
         ]
     },
+    // ── SSC CGL Tier-1 Subject-Wise (15 mins) ──
+    ssc_cgl_tier1_reasoning: {
+        id: 'ssc_cgl_tier1_reasoning',
+        name: 'SSC CGL Tier-1: Reasoning',
+        optionsPerQuestion: 4,
+        durationSeconds: 900, // 15 mins
+        markingScheme: { correct: 2, incorrect: -0.5, unattempted: 0 },
+        subjects: [
+            {
+                id: 'reasoning', name: 'General Intelligence & Reasoning', count: 25,
+                topics: ['Analogies', 'Classification', 'Series', 'Coding-Decoding', 'Blood Relations', 'Direction Sense', 'Syllogism', 'Matrix', 'Word Arrangement', 'Venn Diagrams', 'Missing Numbers', 'Statement & Conclusion', 'Paper Folding & Cutting', 'Mirror & Water Image']
+            }
+        ]
+    },
+    ssc_cgl_tier1_awareness: {
+        id: 'ssc_cgl_tier1_awareness',
+        name: 'SSC CGL Tier-1: Awareness',
+        optionsPerQuestion: 4,
+        durationSeconds: 900, // 15 mins
+        markingScheme: { correct: 2, incorrect: -0.5, unattempted: 0 },
+        subjects: [
+            {
+                id: 'awareness', name: 'General Awareness', count: 25,
+                topics: ['Indian History', 'Geography', 'Polity & Constitution', 'Economics', 'General Science', 'Physics', 'Chemistry', 'Biology', 'Current Affairs', 'Static GK', 'Awards & Honours', 'Books & Authors', 'Sports']
+            }
+        ]
+    },
+    ssc_cgl_tier1_quant: {
+        id: 'ssc_cgl_tier1_quant',
+        name: 'SSC CGL Tier-1: Quant',
+        optionsPerQuestion: 4,
+        durationSeconds: 900, // 15 mins
+        markingScheme: { correct: 2, incorrect: -0.5, unattempted: 0 },
+        subjects: [
+            {
+                id: 'quant', name: 'Quantitative Aptitude', count: 25,
+                topics: ['Number System', 'HCF & LCM', 'Simplification', 'Percentage', 'Ratio & Proportion', 'Average', 'Profit & Loss', 'Simple Interest', 'Compound Interest', 'Time & Work', 'Time Speed Distance', 'Algebra', 'Geometry', 'Trigonometry', 'Mensuration', 'Data Interpretation']
+            }
+        ]
+    },
+    ssc_cgl_tier1_english: {
+        id: 'ssc_cgl_tier1_english',
+        name: 'SSC CGL Tier-1: English',
+        optionsPerQuestion: 4,
+        durationSeconds: 900, // 15 mins
+        markingScheme: { correct: 2, incorrect: -0.5, unattempted: 0 },
+        subjects: [
+            {
+                id: 'english', name: 'English Comprehension', count: 25,
+                topics: ['Reading Comprehension', 'Cloze Test', 'Fill in the Blanks', 'Spelling Correction', 'Idioms & Phrases', 'One Word Substitution', 'Sentence Improvement', 'Active & Passive Voice', 'Direct & Indirect Speech', 'Error Spotting', 'Synonyms & Antonyms', 'Para Jumbles']
+            }
+        ]
+    },
     ibps_po_pre: {
         id: 'ibps_po_pre',
         name: 'IBPS PO Prelims',

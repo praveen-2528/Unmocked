@@ -3,14 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import { useExam } from '../context/ExamContext';
 import { useRoom } from '../context/RoomContext';
 import { useAuth } from '../context/AuthContext';
-import { saveExam } from '../utils/storage';
+import { saveExam, getSavedExams, loadExam } from '../utils/storage';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Clock, ChevronLeft, ChevronRight, CheckCircle, XCircle, List, Play, Pause, SaveAll, Bookmark, Save, Users, MessageSquare, Send } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, CheckCircle, XCircle, List, Play, Pause, SaveAll, Bookmark, Save, Users, MessageSquare, Send, Flame, Frown, Rocket, Skull, PartyPopper, Smile } from 'lucide-react';
 import BadgeIcon from '../components/BadgeSVGs';
 import UserProfileModal from '../components/UserProfileModal';
 import QuestionRenderer from '../components/QuestionRenderer';
+import FriendlyChat from '../components/FriendlyChat';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import './Test.css';
+
+class TestErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error, errorInfo) {
+        console.error("Test.jsx Render Error:", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ color: 'red', padding: '2rem', background: '#fff', height: '100vh' }}>
+                    <h2>Test UI Crashed</h2>
+                    <pre>{this.state.error?.toString()}</pre>
+                    <button onClick={() => window.location.reload()}>Refresh Page</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 // Seating Arrangement Helpers
 const isSeatingArrangement = (q, testFormat) => {
@@ -49,13 +79,20 @@ const normalizeSequence = (str) => {
     return str.toUpperCase().replace(/[^A-Z0-9]/g, '');
 };
 
-const Test = () => {
+const TestInner = () => {
     const { 
-        examType, testFormat, questions, testStarted, currentQuestionIndex, updateExamState, 
-        answers, markedForReview, timeSpent, timeLeft: savedTimeLeft, isMultiplayer, roomCode, _saveId,
-        initialFriendlyRevealData, initialFriendlyAnswerStatus, markingScheme
+        examType: contextExamType, testFormat: contextTestFormat, questions: contextQuestions, testStarted, currentQuestionIndex = 0, updateExamState, 
+        answers: contextAnswers, markedForReview: contextMarkedForReview, timeSpent: contextTimeSpent, timeLeft: savedTimeLeft, isMultiplayer, roomCode, _saveId,
+        initialFriendlyRevealData, initialFriendlyAnswerStatus, markingScheme, loadSavedState
     } = useExam();
-    const { authFetch } = useAuth();
+
+    const examType = contextExamType || 'ssc';
+    const testFormat = contextTestFormat || 'full';
+    const questions = contextQuestions || [];
+    const answers = contextAnswers || {};
+    const markedForReview = contextMarkedForReview || [];
+    const timeSpent = contextTimeSpent || [];
+    const { authFetch, user } = useAuth();
     const room = useRoom();
     const navigate = useNavigate();
     const [activeProfileQuery, setActiveProfileQuery] = useState(null);
@@ -70,12 +107,14 @@ const Test = () => {
         return false;
     });
     const [examStarted, setExamStarted] = useState(room.examStarted || false);
-    const [showPalette, setShowPalette] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
+    const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
     const [saveToast, setSaveToast] = useState(false);
+    const [confirmSubmit, setConfirmSubmit] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const autoSaveRef = useRef(null);
 
-    // Speed Demon Badge tracking refs & state
+    // Badge tracking & notifications
+    const [activeBadgeAnimations, setActiveBadgeAnimations] = useState([]);
     const speedDemonStreakRef = useRef(0);
     const answeredCorrectlyInStreakRef = useRef(new Set());
     const speedDemonAwardedRef = useRef(false);
@@ -83,6 +122,9 @@ const Test = () => {
 
     const triggerSpeedDemonUnlock = () => {
         speedDemonAwardedRef.current = true;
+        speedDemonStreakRef.current = 0;
+        answeredCorrectlyInStreakRef.current.clear();
+        
         setShowSpeedDemonAlert(true);
         setTimeout(() => setShowSpeedDemonAlert(false), 5000);
 
@@ -93,9 +135,74 @@ const Test = () => {
         })
         .then(r => r.json())
         .then(data => {
-            console.log("Speed Demon badge unlocked:", data);
+            if (data.newlyUnlocked && isMultiplayer && room.socket) {
+                room.socket.emit('badgeEarned', {
+                    code: roomCode,
+                    badgeKey: 'speed_demon',
+                    earnedCount: data.earnedCount || 1
+                });
+            } else if (data.newlyUnlocked && !isMultiplayer) {
+                // For solo mode, just push to local animations
+                setActiveBadgeAnimations(prev => [...prev, {
+                    id: Date.now(),
+                    userName: user?.name || 'You',
+                    badgeKey: 'speed_demon',
+                    earnedCount: data.earnedCount || 1
+                }]);
+                setTimeout(() => {
+                    setActiveBadgeAnimations(prev => prev.filter(b => b.id !== Date.now()));
+                }, 5000);
+            }
         })
         .catch(err => console.error("Error unlocking Speed Demon badge:", err));
+    };
+
+    // Socket listener for incoming badge animations
+    useEffect(() => {
+        if (!room.socket) return;
+        const handleBadgeEarned = (data) => {
+            const animId = Date.now() + Math.random();
+            setActiveBadgeAnimations(prev => [...prev, { ...data, id: animId }]);
+            setTimeout(() => {
+                setActiveBadgeAnimations(prev => prev.filter(b => b.id !== animId));
+            }, 5000);
+        };
+        room.socket.on('userBadgeEarned', handleBadgeEarned);
+        return () => {
+            room.socket.off('userBadgeEarned', handleBadgeEarned);
+        };
+    }, [room.socket]);
+
+    // Live Emotes tracking
+    const [activeEmotes, setActiveEmotes] = useState([]);
+
+    useEffect(() => {
+        if (!room.socket) return;
+        const handleReceiveEmote = (data) => {
+            setActiveEmotes(prev => [...prev, data]);
+            setTimeout(() => {
+                setActiveEmotes(prev => prev.filter(e => e.id !== data.id));
+            }, 3000);
+        };
+        room.socket.on('receiveEmote', handleReceiveEmote);
+        return () => room.socket.off('receiveEmote', handleReceiveEmote);
+    }, [room.socket]);
+
+    const sendEmote = (emoteKey) => {
+        if (!room.socket) return;
+        room.socket.emit('sendEmote', { code: roomCode, emoteKey });
+    };
+
+    const EmoteIcon = ({ emoteKey, size = 24 }) => {
+        switch (emoteKey) {
+            case 'flame': return <Flame size={size} color="#f97316" />;
+            case 'frown': return <Frown size={size} color="#3b82f6" />;
+            case 'rocket': return <Rocket size={size} color="#8b5cf6" />;
+            case 'skull': return <Skull size={size} color="#94a3b8" />;
+            case 'party': return <PartyPopper size={size} color="#ec4899" />;
+            case 'smile': return <Smile size={size} color="#eab308" />;
+            default: return null;
+        }
     };
 
     // Friendly mode states
@@ -122,17 +229,42 @@ const Test = () => {
     const [unreadChat, setUnreadChat] = useState(false);
     const chatEndRef = useRef(null);
 
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [chatOpen, setChatOpen] = useState(false);
+
+    // Lock body scroll only while on this page
+    useEffect(() => {
+        const originalStyle = window.getComputedStyle(document.body).overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalStyle;
+        };
+    }, []);
+
     const activeTabRef = useRef(activeTab);
     useEffect(() => {
         activeTabRef.current = activeTab;
     }, [activeTab]);
 
+    const chatOpenRef = useRef(chatOpen);
+    useEffect(() => {
+        chatOpenRef.current = chatOpen;
+        if (chatOpen || activeTab === 'chat') {
+            setUnreadChat(false);
+        }
+    }, [chatOpen, activeTab]);
+
+    const unreadTimeoutRef = useRef(null);
     useEffect(() => {
         if (!room.socket) return;
         const onChatMessage = (msg) => {
             setMessages(prev => [...prev, msg]);
-            if (activeTabRef.current !== 'chat') {
+            if (activeTabRef.current !== 'chat' && !chatOpenRef.current) {
                 setUnreadChat(true);
+                if (unreadTimeoutRef.current) clearTimeout(unreadTimeoutRef.current);
+                unreadTimeoutRef.current = setTimeout(() => {
+                    setUnreadChat(false);
+                }, 3000);
             }
         };
         room.socket.on('chatMessage', onChatMessage);
@@ -181,7 +313,9 @@ const Test = () => {
             updateExamState({ timeLeft });
 
             if (isMultiplayer && roomCode) {
-                localStorage.removeItem(`testara_mp_state_${roomCode}`);
+                const totalTimeSecs = timeSpent.reduce((sum, t) => sum + (t || 0), 0);
+                const localStartHour = new Date(Date.now() - (totalTimeSecs * 1000)).getHours();
+                localStorage.removeItem(`unmocked_mp_state_${roomCode}`);
                 room.submitResults({
                     answers,
                     timeSpent,
@@ -190,6 +324,7 @@ const Test = () => {
                     correct,
                     incorrect,
                     markingScheme,
+                    localStartHour,
                 }).then(() => {
                     navigate('/leaderboard');
                 }).catch(() => {
@@ -207,50 +342,86 @@ const Test = () => {
         }
     };
 
+    const handleFinalSubmit = () => {
+        handleSubmit(true);
+    };
+
+    const getPauseStats = () => {
+        const stats = {};
+        questions.forEach((q, idx) => {
+            const subject = q.subject || q.topic || 'General';
+            if (!stats[subject]) {
+                stats[subject] = { total: 0, attempted: 0, correct: 0, incorrect: 0 };
+            }
+            stats[subject].total += 1;
+            
+            const val = answers[idx];
+            if (val !== undefined && val !== -1 && val !== '') {
+                stats[subject].attempted += 1;
+                
+                if (isMultiplayer) {
+                    const isCorrect = isSeatingArrangement(q, testFormat)
+                        ? normalizeSequence(val) === normalizeSequence(q.options[q.correctAnswer])
+                        : val === q.correctAnswer;
+                    if (isCorrect) stats[subject].correct += 1;
+                    else stats[subject].incorrect += 1;
+                }
+            }
+        });
+        return stats;
+    };
+
     useEffect(() => {
         if (!testStarted || questions.length === 0) {
+            const savedExams = getSavedExams();
+            if (savedExams.length > 0) {
+                const fullExam = loadExam(savedExams[0].id);
+                if (fullExam && !fullExam.isMultiplayer && !isMultiplayer) {
+                    loadSavedState(fullExam);
+                    return;
+                }
+            }
             navigate('/');
+            return;
         }
-    }, [testStarted, questions, navigate]);
 
-    // Main timer (only for exam mode or solo)
+        // Prevent re-taking a submitted test
+        if (isMultiplayer && roomCode && room) {
+            if (room.alreadySubmitted) {
+                navigate('/leaderboard');
+                return;
+            }
+            if (room.results) {
+                const hasSubmitted = room.results.some(r => 
+                    (r.email && user && r.email === user.email) || 
+                    (r.playerName === user?.name) ||
+                    (r.playerName === room.playerName)
+                );
+                if (hasSubmitted) {
+                    navigate('/leaderboard');
+                    return;
+                }
+            }
+        }
+    }, [testStarted, questions, navigate, isMultiplayer, roomCode, room?.results, user, room]);
+
+    // Consolidated Per-Question Timer
     useEffect(() => {
         let timer;
-        if (!isPaused && testStarted && questions.length > 0 && !isFriendly && hasReadInstructions) {
+        // In friendly mode, ensure we only tick on the active room question
+        const isFriendlyActive = !isFriendly || (currentQuestionIndex === roomActiveQuestionIndex && !friendlyAnswered && !friendlyRevealed);
+        
+        if (testStarted && questions.length > 0 && hasReadInstructions && isFriendlyActive && !isPaused) {
             timer = setInterval(() => {
-                setTimeLeft((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        handleSubmit(true);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-
-                updateExamState({
-                    timeSpent: Object.assign([], timeSpent, {
-                        [currentQuestionIndex]: (timeSpent[currentQuestionIndex] || 0) + 1
-                    })
+                updateExamState(prev => {
+                    const newTimeSpent = [...(prev.timeSpent || [])];
+                    newTimeSpent[currentQuestionIndex] = (newTimeSpent[currentQuestionIndex] || 0) + 1;
+                    return { timeSpent: newTimeSpent };
                 });
             }, 1000);
         }
         return () => clearInterval(timer);
-    }, [isPaused, testStarted, questions, currentQuestionIndex, timeSpent, updateExamState, isFriendly, hasReadInstructions]);
-
-    // Friendly mode question timer
-    useEffect(() => {
-        let timer;
-        if (isFriendly && testStarted && questions.length > 0 && !friendlyAnswered && !friendlyRevealed && currentQuestionIndex === roomActiveQuestionIndex && hasReadInstructions) {
-            timer = setInterval(() => {
-                updateExamState({
-                    timeSpent: Object.assign([], timeSpent, {
-                        [currentQuestionIndex]: (timeSpent[currentQuestionIndex] || 0) + 1
-                    })
-                });
-            }, 1000);
-        }
-        return () => clearInterval(timer);
-    }, [isFriendly, testStarted, questions, currentQuestionIndex, roomActiveQuestionIndex, friendlyAnswered, friendlyRevealed, timeSpent, updateExamState, hasReadInstructions]);
+    }, [testStarted, questions, currentQuestionIndex, updateExamState, isFriendly, roomActiveQuestionIndex, friendlyAnswered, friendlyRevealed, hasReadInstructions, isPaused]);
 
     // Auto-save every 60 seconds (solo mode only)
     useEffect(() => {
@@ -269,7 +440,7 @@ const Test = () => {
     // Sync multiplayer state to localStorage
     useEffect(() => {
         if (isMultiplayer && testStarted && roomCode) {
-            localStorage.setItem(`testara_mp_state_${roomCode}`, JSON.stringify({
+            localStorage.setItem(`unmocked_mp_state_${roomCode}`, JSON.stringify({
                 roomCode,
                 questions,
                 answers,
@@ -314,9 +485,9 @@ const Test = () => {
     // Conductor auto-redirect to leaderboard when all players submit
     useEffect(() => {
         if (isMultiplayer && room.isConductor && room.roomMode === 'exam') {
-            const activePlayers = room.participants.filter(p => !p.isConductor);
+            const activePlayers = (room.participants || []).filter(p => !p.isConductor);
             const totalPlayersCount = activePlayers.length;
-            const submittedCount = room.results.length;
+            const submittedCount = (room.results || []).length;
             if (totalPlayersCount > 0 && submittedCount === totalPlayersCount) {
                 navigate('/leaderboard');
             }
@@ -352,22 +523,28 @@ const Test = () => {
             }
         };
 
-        const onForceSubmit = () => {
-            handleSubmit(true);
-        };
-
         room.socket.on('friendlyAnswerStatus', onAnswerStatus);
         room.socket.on('friendlyReveal', onReveal);
         room.socket.on('friendlyNextQuestion', onNextQuestion);
-        room.socket.on('friendlyForceSubmit', onForceSubmit);
 
         return () => {
             room.socket.off('friendlyAnswerStatus', onAnswerStatus);
             room.socket.off('friendlyReveal', onReveal);
             room.socket.off('friendlyNextQuestion', onNextQuestion);
-            room.socket.off('friendlyForceSubmit', onForceSubmit);
         };
     }, [isFriendly, room.socket, updateExamState]);
+
+    // Listen for force submit event globally across all multiplayer modes
+    useEffect(() => {
+        if (!isMultiplayer || !room.socket) return;
+        const onForceSubmit = () => {
+            handleSubmit(true);
+        };
+        room.socket.on('friendlyForceSubmit', onForceSubmit);
+        return () => {
+            room.socket.off('friendlyForceSubmit', onForceSubmit);
+        };
+    }, [isMultiplayer, room.socket, answers, timeSpent]);
 
     // Sync examStarted state if room state changes
     useEffect(() => {
@@ -451,11 +628,14 @@ const Test = () => {
     const handleOptionSelect = (optionIndex) => {
         if (isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered)) return;
 
-        const newAnswers = { ...answers, [currentQuestionIndex]: optionIndex };
+        const isCurrentlySelected = answers[currentQuestionIndex] === optionIndex;
+        const newAnswers = { ...answers, [currentQuestionIndex]: isCurrentlySelected ? undefined : optionIndex };
         updateExamState({ answers: newAnswers });
+        
+        if (isCurrentlySelected) return; // If unselecting, we don't trigger speed demon logic
 
         // Speed Demon tracking for Solo and Exam modes
-        if (!isFriendly && !speedDemonAwardedRef.current) {
+        if (!isFriendly) {
             const q = questions[currentQuestionIndex];
             const isCorrect = optionIndex === q.correctAnswer;
             const timeUsed = timeSpent[currentQuestionIndex] || 0;
@@ -484,7 +664,7 @@ const Test = () => {
         const timeTaken = timeSpent[currentQuestionIndex] || 0;
 
         // Speed Demon tracking for Friendly mode
-        if (isFriendly && !speedDemonAwardedRef.current) {
+        if (isFriendly) {
             const q = questions[currentQuestionIndex];
             const optionIndex = answers[currentQuestionIndex];
             const isCorrect = isSeatingArrangement(q, testFormat)
@@ -566,7 +746,7 @@ const Test = () => {
         if (isFriendly && index > roomActiveQuestionIndex) return; // No jumping beyond active question in friendly mode
         updateExamState({ currentQuestionIndex: index });
         if (window.innerWidth < 768) {
-            setShowPalette(false);
+            setIsPaletteCollapsed(false);
         }
     };
 
@@ -602,9 +782,9 @@ const Test = () => {
 
 
     const renderConductorDashboard = () => {
-        const activePlayers = room.participants.filter(p => !p.isConductor);
+        const activePlayers = (room.participants || []).filter(p => !p.isConductor);
         const totalPlayersCount = activePlayers.length;
-        const submittedCount = room.results.length;
+        const submittedCount = (room.results || []).length;
         const allSubmittedState = room.allSubmitted || (totalPlayersCount > 0 && submittedCount === totalPlayersCount);
 
         const handleForceReveal = () => {
@@ -673,7 +853,7 @@ const Test = () => {
                                                     👁️ Force Reveal Answer (Q{currentQuestionIndex + 1})
                                                 </Button>
                                             ) : (
-                                                currentQuestionIndex < questions.length - 1 ? (
+                                                (currentQuestionIndex < questions.length - 1 && !isLastQuestion) ? (
                                                     <Button variant="primary" onClick={handleFriendlyNext}>
                                                         ⏩ Next Question
                                                     </Button>
@@ -730,7 +910,7 @@ const Test = () => {
                                                 </tr>
                                             ) : (
                                                 activePlayers.map((p, idx) => {
-                                                    const result = room.results.find(r => r.playerName === p.name || (p.email && r.email === p.email));
+                                                    const result = (room.results || []).find(r => r.playerName === p.name || (p.email && r.email === p.email));
                                                     const hasSubmitted = !!result;
 
                                                     // Determine progress details
@@ -857,52 +1037,15 @@ const Test = () => {
                             </div>
                         ) : (
                             <div className="test-chat-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                                <div className="test-chat-messages" style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {messages.length === 0 ? (
-                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textAlign: 'center', marginTop: '2rem', fontStyle: 'italic' }}>
-                                            No messages yet.
-                                        </div>
-                                    ) : (
-                                        messages.map((msg, i) => {
-                                            const isSelf = msg.sender === room.playerName;
-                                            return (
-                                                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isSelf ? 'flex-end' : 'flex-start', maxWidth: '100%', wordBreak: 'break-word' }}>
-                                                    <span 
-                                                         style={{ 
-                                                             fontSize: '0.65rem', 
-                                                             color: isSelf ? 'var(--primary)' : 'var(--text-secondary)', 
-                                                             fontWeight: '600', 
-                                                             marginBottom: '0.15rem',
-                                                             cursor: 'pointer',
-                                                             textDecoration: 'underline'
-                                                         }}
-                                                         onClick={() => setActiveProfileQuery({ name: msg.sender, email: msg.email })}
-                                                         title={`Click to view ${msg.sender}'s profile`}
-                                                     >
-                                                         {msg.sender}
-                                                     </span>
-                                                    <div style={{ fontSize: '0.75rem', color: 'white', background: isSelf ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255, 255, 255, 0.05)', border: isSelf ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255,255,255,0.08)', padding: '0.4rem 0.6rem', borderRadius: '8px', maxWidth: '90%' }}>
-                                                        <p style={{ margin: 0 }}>{msg.text}</p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                    <div ref={chatEndRef} />
-                                </div>
-                                <div className="test-chat-input" style={{ display: 'flex', padding: '0.5rem', borderTop: '1px solid var(--card-border)' }}>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Type message..." 
-                                        value={chatInput} 
-                                        onChange={(e) => setChatInput(e.target.value)} 
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                                        style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem', borderRadius: '4px', fontSize: '0.8rem', outline: 'none' }}
+                                {isMultiplayer && room.socket && (
+                                    <FriendlyChat 
+                                        socket={room.socket} 
+                                        roomCode={roomCode} 
+                                        displayName={user?.name}
+                                        inline={true}
+                                        onUserClick={setActiveProfileQuery}
                                     />
-                                    <button onClick={handleSendChat} style={{ background: 'var(--primary)', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', marginLeft: '0.4rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Send size={12} />
-                                    </button>
-                                </div>
+                                )}
                             </div>
                         )}
                     </aside>
@@ -999,11 +1142,12 @@ const Test = () => {
         );
     };
 
-    if (isConductor) {
+    if (isConductor && !isFriendly) {
         return renderConductorDashboard();
     }
 
-    if (!testStarted || !currentQuestion) return null;
+    if (!testStarted) return <div style={{padding:'2rem'}}>Loading test data...</div>;
+    if (!currentQuestion) return <div style={{padding:'2rem'}}>Loading question...</div>;
 
     if (!hasReadInstructions) {
         return renderInstructions();
@@ -1217,630 +1361,544 @@ const Test = () => {
 
     const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-    return (
-        <div className="test-layout">
-            {/* Save Toast */}
-            {saveToast && (
-                <div className="save-toast animate-fade-in">
-                    <CheckCircle size={18} /> Progress saved! Redirecting...
-                </div>
-            )}
+    // Grid Status
+    const getGridStatus = (index) => {
+        // In friendly mode, after reveal, reflect correctness
+        if (isFriendly && friendlyReveals[index] && friendlyReveals[index].playerChoices) {
+            const myChoice = friendlyReveals[index].playerChoices[room.playerName];
+            if (myChoice) {
+                if (myChoice.isCorrect) return 'answered';
+                return 'not-answered'; // Wrong or skipped
+            }
+        }
 
-            {/* Speed Demon In-Test Alert */}
-            {showSpeedDemonAlert && (
-                <div className="speed-demon-alert-toast">
-                    <div className="speed-demon-alert-content">
-                        <BadgeIcon badgeKey="speed_demon" size={42} animated={true} />
-                        <div className="speed-demon-text-wrap">
-                            <span className="sd-alert-title">🏆 Badge Unlocked!</span>
-                            <span className="sd-alert-badge-name">Speed Demon</span>
+        if (answers[index] !== undefined && answers[index] !== -1 && answers[index] !== '') return 'answered';
+        if (Array.isArray(markedForReview) && markedForReview.includes(index)) return 'marked';
+        if (answers[index] === -1) return 'not-answered';
+        if (timeSpent[index] > 0 || index === currentQuestionIndex) return 'not-answered';
+        return 'not-visited';
+    };
+
+    const getAnsweredCount = () => Object.keys(answers).filter(k => answers[k] !== undefined && answers[k] !== -1 && answers[k] !== '').length;
+    const getMarkedCount = () => Array.isArray(markedForReview) ? markedForReview.length : 0;
+    const getNotAnsweredCount = () => {
+        let count = 0;
+        for (let i = 0; i < questions.length; i++) {
+            if (answers[i] === undefined && timeSpent[i] > 0) count++;
+        }
+        return count;
+    };
+
+    const hasPlayerAnsweredQuestion = (pName, idx) => {
+        if (idx < roomActiveQuestionIndex) {
+            return friendlyReveals[idx]?.playerChoices?.[pName] !== undefined;
+        }
+        if (idx === roomActiveQuestionIndex) {
+            if (friendlyRevealed) {
+                return friendlyRevealData?.playerChoices?.[pName] !== undefined;
+            } else {
+                return friendlyAnswerStatus.answeredPlayers?.some(ap => ap.name === pName);
+            }
+        }
+        return false;
+    };
+
+    const isAnswered = answers[currentQuestionIndex] !== undefined && answers[currentQuestionIndex] !== -1 && answers[currentQuestionIndex] !== '';
+
+    // Friendly Host Actions
+    const handleForceReveal = () => {
+        if (room.isHost) {
+            room.socket.emit('friendlyForceReveal', { code: roomCode });
+        }
+    };
+    const handleSkipForAll = () => {
+        if (room.isHost) {
+            room.socket.emit('friendlyNext', { code: roomCode });
+        }
+    };
+    const handleNextFriendly = () => {
+        if (room.isHost) {
+            room.socket.emit('friendlyNext', { code: roomCode });
+        }
+    };
+    const handleFinishFriendly = () => {
+        if (room.isHost) {
+            room.socket.emit('friendlyFinish', { code: roomCode });
+        }
+    };
+
+    return (
+        <div className="test-engine-container" style={{ fontSize: `${zoomLevel}rem` }}>
+            
+            {/* Badge Animation Overlay */}
+            <div style={{
+                position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                pointerEvents: 'none', zIndex: 9999, display: 'flex', flexDirection: 'column',
+                justifyContent: 'center', alignItems: 'center', gap: '20px'
+            }}>
+                {activeBadgeAnimations.map(anim => (
+                    <div key={anim.id} style={{
+                        animation: 'badge-pulse 1s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        background: 'rgba(15, 23, 42, 0.9)', padding: '40px 60px', borderRadius: '24px',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 50px rgba(99,102,241,0.6)',
+                        border: '2px solid rgba(99,102,241,0.5)', backdropFilter: 'blur(10px)',
+                        transformOrigin: 'center'
+                    }}>
+                        <BadgeIcon badgeKey={anim.badgeKey} size={180} animated={true} />
+                        <div style={{ marginTop: '25px', color: 'white', fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            <span style={{ color: '#a5b4fc' }}>{anim.userName}</span> earned a badge!
                         </div>
+                        {anim.earnedCount > 1 && (
+                            <div style={{
+                                marginTop: '15px', background: 'linear-gradient(45deg, #f59e0b, #ef4444)',
+                                padding: '8px 20px', borderRadius: '30px', fontSize: '1.5rem', fontWeight: 'bold', color: 'white',
+                                boxShadow: '0 4px 15px rgba(239,68,68,0.5)'
+                            }}>
+                                x{anim.earnedCount} Multiplier!
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
+                ))}
+            </div>
+
+            {/* Floating Live Emotes (Removed per user request) */}
 
             {/* Top Header */}
-            <header className="test-header glass">
-                <div className="exam-info">
-                    <h2>{examType.toUpperCase()} Mock Test</h2>
-                    <span className="format-badge">{testFormat.replace('-', ' ')}</span>
-                    {isFriendly && <span className="format-badge friendly-badge">🎉 Friendly</span>}
-                    {isExamMode && <span className="format-badge multiplayer-badge">📝 Exam</span>}
-                    {isMultiplayer && <span className="format-badge multiplayer-badge">🏠 {roomCode}</span>}
+            <header className="te-top-header">
+                <div className="te-header-left">
+                    <div className="te-logo">
+                        <h1>UnMocked</h1>
+                        <span>{examType.toUpperCase()} {testFormat.replace('-', ' ')}</span>
+                    </div>
                 </div>
 
-                <div className="header-controls">
-                    {!isFriendly && (
-                        <button
-                            className="btn btn-ghost btn-sm pause-btn"
-                            onClick={() => setIsPaused(!isPaused)}
-                            title={isPaused ? "Resume Test" : "Pause Test"}
-                        >
-                            {isPaused ? <Play size={20} /> : <Pause size={20} />}
-                        </button>
-                    )}
+                <div className="te-header-center">
+                    <div className="zoom-controls">
+                        <button className="zoom-btn" onClick={() => setZoomLevel(z => Math.min(z + 0.1, 1.5))}>Zoom (+)</button>
+                        <button className="zoom-btn" onClick={() => setZoomLevel(z => Math.max(z - 0.1, 0.8))}>Zoom (-)</button>
+                    </div>
+                    <h2>General Intelligence & Reasoning Su...</h2>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Roll No : {roomCode || 'SOLO-MODE'}
+                    </span>
+                </div>
 
-                    {!isFriendly && (
-                        <div className={`timer-container ${!isPaused && timeLeft < 300 ? 'animate-pulse text-danger' : ''}`}>
-                            <Clock size={20} className="timer-icon" />
-                            <span className="time-left">{formatTime(timeLeft)}</span>
+                <div className="te-header-right">
+                    <div className="te-timer-box" style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span className="time-label">Time Spent</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className="time-value">
+                                    {formatTime(timeSpent[currentQuestionIndex] || 0)}
+                                </span>
+                                <button 
+                                    className="zoom-btn" 
+                                    onClick={() => setIsPaused(true)} 
+                                    style={{ padding: '0.3rem', display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', border: 'none', cursor: 'pointer', color: 'white' }}
+                                    title="Pause Test"
+                                >
+                                    <Pause size={14} />
+                                </button>
+                            </div>
                         </div>
-                    )}
-
-                    {isFriendly && (
-                        <div className="friendly-progress-badge">
-                            <Users size={16} />
-                            <span>Q{currentQuestionIndex + 1}/{questions.length}</span>
-                        </div>
-                    )}
-
-                    <button
-                        className="mobile-palette-toggle btn btn-ghost btn-sm"
-                        onClick={() => setShowPalette(!showPalette)}
-                    >
-                        <List size={20} />
-                    </button>
+                    </div>
+                    <div className="te-avatars">
+                        {isMultiplayer ? (
+                            room.participants?.map((p, idx) => (
+                                <div className="te-avatar" key={idx} title={p.name}>
+                                    <div className="avatar-placeholder">{p.name?.[0]?.toUpperCase() || 'P'}</div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="te-avatar">
+                                <div className="avatar-placeholder">{user?.name?.[0]?.toUpperCase() || 'U'}</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
-            <div className={`test-content ${isPaused ? 'paused' : ''}`}>
-                {/* Blur Overlay when Paused */}
-                {isPaused && (
-                    <div className="pause-overlay">
-                        <div className="pause-modal glass">
-                            <Pause size={48} className="pause-icon" />
-                            <h2>Test Paused</h2>
-                            <p>Your timer is stopped and the screen is hidden.</p>
-                            <Button variant="primary" onClick={() => setIsPaused(false)}>Resume Test</Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Main Question Area */}
-                <main className="question-area">
-                    <Card className="question-card animate-fade-in" key={currentQuestionIndex}>
-                        <div className="question-meta">
-                            <span className="q-number">Question {currentQuestionIndex + 1} of {questions.length}</span>
-                            {isFriendly && currentQuestionIndex < roomActiveQuestionIndex && (
-                                <button 
-                                    className="btn btn-ghost btn-xs go-to-live-btn"
-                                    onClick={() => updateExamState({ currentQuestionIndex: roomActiveQuestionIndex })}
-                                >
-                                    ⚡ Back to Live (Q{roomActiveQuestionIndex + 1})
-                                </button>
-                            )}
-                            {!isFriendly && (
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                    <span className="q-tag" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <Clock size={14} /> {formatTime(timeSpent[currentQuestionIndex] || 0)}
-                                    </span>
-                                    {currentQuestion.subject && <span className="q-tag">{currentQuestion.subject}</span>}
-                                </div>
-                            )}
-                            {isFriendly && (
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    {currentQuestion.subject && <span className="q-tag">{currentQuestion.subject}</span>}
-                                    <span className="q-tag timer-tag" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        ⏱️ {timeSpent[currentQuestionIndex] || 0}s
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {isSeatingArrangement(currentQuestion, testFormat) && (
-                            <div className="seating-arrangement-badge" style={{ marginBottom: '1rem' }}>
-                                {getSeatingArrangementType(currentQuestion) === 'circular' && (
-                                    <span className="seating-badge circular">🔄 Circular Seating Arrangement ({getMembersCount(currentQuestion)} Members)</span>
-                                )}
-                                {getSeatingArrangementType(currentQuestion) === 'parallel' && (
-                                    <span className="seating-badge parallel">⇄ Parallel Seating Arrangement ({getMembersCount(currentQuestion)} Members)</span>
-                                )}
-                                {getSeatingArrangementType(currentQuestion) === 'linear' && (
-                                    <span className="seating-badge linear">📏 Linear Seating Arrangement ({getMembersCount(currentQuestion)} Members)</span>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="question-text">
-                            <QuestionRenderer text={currentQuestion.text} subject={currentQuestion.subject} />
-                        </div>
-
-                        {isSeatingArrangement(currentQuestion, testFormat) ? (
-                            renderSeatingArrangement(currentQuestion)
-                        ) : (
-                            <div className="options-list">
-                                {currentQuestion.options.map((option, idx) => (
-                                    <button
-                                        key={idx}
-                                        className={getOptionClass(idx)}
-                                        onClick={() => handleOptionSelect(idx)}
-                                        disabled={isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered || friendlyRevealed)}
-                                    >
-                                        <div className="option-marker">
-                                            {String.fromCharCode(65 + idx)}
-                                        </div>
-                                        <div className="option-content">{option}</div>
-                                        {/* Normal selected check */}
-                                        {!isQuestionRevealed && answers[currentQuestionIndex] === idx && (
-                                            <CheckCircle className="option-check" style={{ color: 'var(--primary)' }} size={20} />
-                                        )}
-                                        {/* Friendly reveal: correct */}
-                                        {isQuestionRevealed && idx === questionRevealData?.correctAnswer && (
-                                            <CheckCircle className="option-check success-icon" size={20} />
-                                        )}
-                                        {/* Friendly reveal: my wrong pick */}
-                                        {isQuestionRevealed && answers[currentQuestionIndex] === idx && idx !== questionRevealData?.correctAnswer && (
-                                            <XCircle className="option-check danger-icon" size={20} />
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Friendly Mode Actions (Save & Skip) */}
-                        {isFriendly && currentQuestionIndex === roomActiveQuestionIndex && !friendlyAnswered && !friendlyRevealed && (
-                            <div className="friendly-actions-container animate-fade-in" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                                {(answers[currentQuestionIndex] !== undefined && answers[currentQuestionIndex].toString().trim() !== '') && (
-                                    <Button variant="primary" onClick={handleSaveAnswer} style={{ minWidth: '150px' }}>
-                                        🔒 Save Answer
-                                    </Button>
-                                )}
-                                <Button variant="outline" onClick={handleIndividualSkip} style={{ minWidth: '150px' }}>
-                                    ⏩ Skip Question
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* Friendly Mode: Waiting / Reveal Section */}
-                        {isFriendly && (
-                            <div className="friendly-section">
-                                {currentQuestionIndex === roomActiveQuestionIndex && friendlyWaiting && !friendlyRevealed && (
-                                    <div className="friendly-waiting glass">
-                                        <div className="waiting-spinner"></div>
-                                        <p>Waiting for others... ({friendlyAnswerStatus.answeredCount}/{friendlyAnswerStatus.totalParticipants})</p>
-                                        <div className="answered-avatars">
-                                            {friendlyAnswerStatus.answeredPlayers?.map((player, i) => (
-                                                <span key={i} className="avatar-chip">✅ {player.name} ({player.timeSpentSec}s)</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {currentQuestionIndex === roomActiveQuestionIndex && !friendlyAnswered && !friendlyRevealed && (
-                                    <div className="friendly-prompt">
-                                        <p>👆 Pick an answer — click lock/save when you are done!</p>
-                                    </div>
-                                )}
-
-                                {isQuestionRevealed && questionRevealData && (
-                                    <div className="friendly-reveal-card glass animate-fade-in">
-                                        <h4>📊 Everyone's Answers</h4>
-                                        <div className="reveal-players">
-                                            {Object.entries(questionRevealData.playerChoices).map(([name, data]) => (
-                                                <div key={name} className={`reveal-player ${data.choice === -1 ? 'skipped' : (data.isCorrect ? 'correct' : 'incorrect')}`}>
-                                                    <span className="reveal-icon">{data.choice === -1 ? '⏭️' : (data.isCorrect ? '✅' : '❌')}</span>
-                                                    <span className="reveal-name">{name}</span>
-                                                    <span className="reveal-choice">
-                                                        {data.choice === -1 ? 'Skipped' : `picked ${String.fromCharCode(65 + data.choice)}`} ({data.timeSpentSec}s)
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="reveal-explanation">
-                                            <strong>Explanation:</strong> {currentQuestion.explanation}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="test-actions">
-                            <Button
-                                variant="outline"
-                                onClick={handlePrev}
-                                disabled={currentQuestionIndex === 0}
-                            >
-                                <ChevronLeft size={20} /> Previous
-                            </Button>
-
-                            {!isFriendly && (
-                                <Button
-                                    variant={markedForReview?.includes(currentQuestionIndex) ? 'solid' : 'outline'}
-                                    onClick={handleReviewAndNext}
-                                    className={markedForReview?.includes(currentQuestionIndex) ? 'bg-amber-600' : ''}
-                                >
-                                    <Bookmark size={20} /> {markedForReview?.includes(currentQuestionIndex) ? 'Unmark' : 'Mark Review'}
-                                </Button>
-                            )}
-
-                            <div className="right-actions">
-                                {isFriendly ? (
-                                    <>
-                                        {currentQuestionIndex < roomActiveQuestionIndex ? (
-                                            <Button variant="primary" onClick={() => {
-                                                updateExamState({ currentQuestionIndex: currentQuestionIndex + 1 });
-                                            }}>
-                                                Next Question <ChevronRight size={20} />
-                                            </Button>
-                                        ) : (
-                                            <>
-                                                {!friendlyRevealed && (
-                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                        {room.isHost && (
-                                                            <>
-                                                                <Button variant="outline" onClick={() => {
-                                                                    if (window.confirm("Force reveal the answer to all players?")) {
-                                                                        room.socket?.emit('friendlyForceReveal', { code: roomCode }, () => {});
-                                                                    }
-                                                                }}>
-                                                                    Force Reveal
-                                                                </Button>
-                                                                {!isLastQuestion && (
-                                                                    <Button variant="outline" onClick={() => {
-                                                                        if (window.confirm("Skip this question for all players?")) {
-                                                                            room.socket?.emit('friendlyNext', { code: roomCode }, () => {});
-                                                                        }
-                                                                    }}>
-                                                                        Skip for All
-                                                                    </Button>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {friendlyRevealed && (
-                                                    <>
-                                                        {isLastQuestion ? (
-                                                            <Button variant="primary" onClick={() => handleSubmit()}>
-                                                                Finish & See Results
-                                                            </Button>
-                                                        ) : (
-                                                            room.isHost ? (
-                                                                <Button variant="primary" onClick={handleNext}>
-                                                                    Next Question <ChevronRight size={20} />
-                                                                </Button>
-                                                            ) : (
-                                                                <div className="friendly-waiting-next glass" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                                                    ⏳ Waiting for host to advance...
-                                                                </div>
-                                                            )
-                                                        )}
-                                                    </>
-                                                )}
-                                            </>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        {isLastQuestion ? (
-                                            <Button variant="primary" onClick={() => handleSubmit()}>
-                                                Submit Test
-                                            </Button>
-                                        ) : (
-                                            <Button variant="primary" onClick={handleNext}>
-                                                Next <ChevronRight size={20} />
-                                            </Button>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </Card>
-                </main>
-
-                {/* Sidebar / Question Palette */}
-                <aside className={`palette-sidebar glass ${showPalette ? 'show' : ''}`}>
-                    <div className="palette-header">
-                        <h3>Question Palette</h3>
-                        <div className="palette-stats">
-                            <div className="stat">
-                                <span className="dot answered"></span> {Object.values(answers).filter(val => val !== undefined && val !== -1).length} Answered
-                            </div>
-                            <div className="stat">
-                                <span className="dot unattempted"></span> {questions.length - Object.values(answers).filter(val => val !== undefined && val !== -1).length} Unattempted
-                            </div>
-                        </div>
-                        {!isFriendly && (
-                            <div className="palette-stats" style={{ marginTop: '0.5rem' }}>
-                                <div className="stat">
-                                    <span className="dot" style={{ backgroundColor: '#f59e0b' }}></span> {markedForReview?.length || 0} Review
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="palette-grid">
-                        {questions.map((_, idx) => {
-                            let friendlyClass = '';
-                            if (isFriendly) {
-                                const reveal = friendlyReveals[idx] || (idx === roomActiveQuestionIndex ? friendlyRevealData : null);
-                                if (reveal && reveal.playerChoices && reveal.playerChoices[room.playerName]) {
-                                    const choiceData = reveal.playerChoices[room.playerName];
-                                    if (choiceData.choice === -1) {
-                                        friendlyClass = 'friendly-skipped';
-                                    } else if (choiceData.isCorrect) {
-                                        friendlyClass = 'friendly-correct';
-                                    } else {
-                                        friendlyClass = 'friendly-incorrect';
-                                    }
-                                }
-                            }
-
-                            return (
-                                <button
-                                    key={idx}
-                                    className={`palette-btn 
-                      ${currentQuestionIndex === idx ? 'current' : ''} 
-                      ${(answers[idx] !== undefined && answers[idx] !== -1 && answers[idx].toString().trim() !== '') ? 'answered' : ''}
-                      ${markedForReview?.includes(idx) ? 'review' : ''}
-                      ${friendlyClass}
-                    `}
-                                    onClick={() => jumpToQuestion(idx)}
-                                    disabled={isFriendly && idx > roomActiveQuestionIndex}
-                                >
-                                    {idx + 1}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="palette-footer">
-                        {!isMultiplayer && (
-                            <Button variant="outline" className="w-full save-exit-btn" onClick={handleSaveAndExit}>
-                                <Save size={16} style={{ marginRight: '0.5rem' }} /> Save & Exit
-                            </Button>
-                        )}
-                        {!isFriendly && (
-                            <Button variant="outline" className="w-full partial-submit-btn" onClick={handlePartialSubmit} style={{ marginTop: '0.75rem' }}>
-                                <SaveAll size={16} style={{ marginRight: '0.5rem' }} /> Progress Check
-                            </Button>
-                        )}
-                        {isFriendly && room.isHost ? (
-                            <Button variant="primary" className="w-full finish-all-btn" onClick={() => {
-                                if (window.confirm('This will submit the exam for ALL participants. Continue?')) {
-                                    room.socket?.emit('friendlyFinish', { code: roomCode }, () => { });
-                                }
-                            }} style={{ marginTop: '0.75rem' }}>
-                                🚨 Finish Exam for All
-                            </Button>
-                        ) : (
-                            <Button variant="primary" className="w-full" onClick={() => handleSubmit()} style={{ marginTop: '0.75rem' }}>
-                                {isFriendly ? 'Finish Test' : 'Submit Final Test'}
-                            </Button>
-                        )}
-                    </div>
-                </aside>
-
-                {/* Multiplayer Player Answer Status Sidebar Panel */}
-                {isMultiplayer && (
-                    <aside className="mp-player-panel glass">
-                        {/* Tab Headers */}
-                        {room.enableChat !== false && room.socket ? (
-                            <div className="mp-panel-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)' }}>
-                                <button 
-                                    onClick={() => setActiveTab('players')} 
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.75rem',
-                                        border: 'none',
-                                        background: activeTab === 'players' ? 'rgba(255,255,255,0.05)' : 'none',
-                                        color: activeTab === 'players' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        borderBottom: activeTab === 'players' ? '2px solid var(--primary)' : 'none'
-                                    }}
-                                >
-                                    <Users size={12} style={{ marginRight: '0.25rem', display: 'inline' }} /> Players
-                                </button>
-                                <button 
-                                    onClick={() => {
-                                        setActiveTab('chat');
-                                        setUnreadChat(false);
-                                    }} 
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.75rem',
-                                        border: 'none',
-                                        background: activeTab === 'chat' ? 'rgba(255,255,255,0.05)' : 'none',
-                                        color: activeTab === 'chat' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        position: 'relative',
-                                        borderBottom: activeTab === 'chat' ? '2px solid var(--primary)' : 'none'
-                                    }}
-                                >
-                                    <MessageSquare size={12} style={{ marginRight: '0.25rem', display: 'inline' }} /> Chat
-                                    {unreadChat && (
-                                        <span className="unread-dot" style={{
-                                            position: 'absolute',
-                                            top: '8px',
-                                            right: '12px',
-                                            width: '6px',
-                                            height: '6px',
-                                            borderRadius: '50%',
-                                            background: '#ef4444',
-                                            boxShadow: '0 0 8px #ef4444'
-                                        }} />
-                                    )}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="mp-panel-header">
-                                <h4><Users size={16} /> Players — Q{currentQuestionIndex + 1}</h4>
-                            </div>
-                        )}
-
-                        {activeTab === 'players' ? (
-                            <div className="mp-player-list">
-                                {isFriendly && room.participants?.map((p, idx) => {
-                                    const isCurrentActive = currentQuestionIndex === roomActiveQuestionIndex;
-                                    const answeredPlayer = isCurrentActive && friendlyAnswerStatus.answeredPlayers?.find(ap => ap.name === p.name);
-                                    const hasAnswered = !!answeredPlayer;
-                                    const answerTime = answeredPlayer ? answeredPlayer.timeSpentSec : null;
-                                    const revealData = questionRevealData?.playerChoices?.[p.name];
-                                    return (
-                                        <div 
-                                            key={idx} 
-                                            className={`mp-player-row ${revealData ? (revealData.choice === -1 ? 'skipped' : (revealData.isCorrect ? 'correct' : 'incorrect')) : ''}`}
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => setActiveProfileQuery({ email: p.email, name: p.name })}
-                                            title={`Click to view ${p.name}'s profile & exams`}
-                                        >
-                                            <span className="mp-player-name" style={{ textDecoration: 'underline' }}>{p.isHost ? '👑 ' : ''}{p.name}</span>
-                                            <span className="mp-player-status">
-                                                {revealData ?
-                                                    <>{revealData.choice === -1 ? '⏭️ Skipped' : `${revealData.isCorrect ? '✅' : '❌'} ${String.fromCharCode(65 + revealData.choice)}`} ({revealData.timeSpentSec}s)</>
-                                                    : hasAnswered ? <span className="answered-dot">✅ ({answerTime}s)</span> : <span className="waiting-dot">⏳</span>
-                                                }
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                                {isExamMode && (() => {
-                                    const examPlayers = (room.participants || []).filter(p => !p.isConductor);
-                                    const sortedPlayers = [...examPlayers].sort((a, b) => {
-                                        return (b.liveScore || 0) - (a.liveScore || 0) || (b.answeredCount || 0) - (a.answeredCount || 0);
-                                    });
-                                    const maxScore = sortedPlayers.length > 0 ? (sortedPlayers[0].liveScore || 0) : 0;
-
-                                    return sortedPlayers.map((p, idx) => {
-                                        const isFirst = maxScore > 0 && (p.liveScore || 0) === maxScore;
-                                        return (
-                                            <div 
-                                                key={idx} 
-                                                className={`mp-player-row ${isFirst ? 'leader-row' : ''}`}
-                                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '0.5rem' }}
-                                                onClick={() => setActiveProfileQuery({ email: p.email, name: p.name })}
-                                                title={`Click to view ${p.name}'s profile & exams`}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden', flex: 1 }}>
-                                                    {isFirst ? (
-                                                        <Crown size={16} className="text-amber leader-crown-anim" style={{ flexShrink: 0 }} />
-                                                    ) : p.isHost ? (
-                                                        <Crown size={14} className="text-amber-muted" style={{ flexShrink: 0 }} />
-                                                    ) : (
-                                                        <span className="rank-number" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', width: '20px', display: 'inline-block', flexShrink: 0 }}>#{idx + 1}</span>
-                                                    )}
-                                                    <span className="mp-player-name" style={{ textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem', fontWeight: isFirst ? '700' : '500' }}>
-                                                        {p.name}
-                                                    </span>
-                                                </div>
-                                                <span className="mp-player-score-badge" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: isFirst ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.05)', color: isFirst ? '#f59e0b' : 'var(--text-secondary)', border: isFirst ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-                                                    {p.liveScore || 0} pts ({p.answeredCount || 0} Ans)
-                                                </span>
-                                            </div>
-                                        );
-                                    });
-                                })()}
-                            </div>
-                        ) : (
-                            /* Sidebar Chat view */
-                            <div className="test-chat-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                                <div className="test-chat-messages" style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {messages.length === 0 ? (
-                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textAlign: 'center', marginTop: '2rem', fontStyle: 'italic' }}>
-                                            No messages yet.
-                                        </div>
-                                    ) : (
-                                        messages.map((msg, i) => {
-                                            const isSelf = msg.sender === room.playerName;
-                                            return (
-                                                <div 
-                                                    key={i} 
-                                                    style={{ 
-                                                        display: 'flex', 
-                                                        flexDirection: 'column', 
-                                                        alignItems: isSelf ? 'flex-end' : 'flex-start',
-                                                        maxWidth: '100%',
-                                                        wordBreak: 'break-word'
-                                                    }}
-                                                >
-                                                    <span 
-                                                         style={{ 
-                                                             fontSize: '0.65rem', 
-                                                             color: isSelf ? 'var(--primary)' : 'var(--text-secondary)', 
-                                                             fontWeight: '600', 
-                                                             textDecoration: 'underline'
-                                                         }}
-                                                         onClick={() => setActiveProfileQuery({ name: msg.sender, email: msg.email })}
-                                                         title={`Click to view ${msg.sender}'s profile`}
-                                                     >
-                                                         {msg.sender}
-                                                     </span>
-                                                    <div style={{ 
-                                                        fontSize: '0.75rem', 
-                                                        color: 'white', 
-                                                        background: isSelf ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                                                        border: isSelf ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255,255,255,0.08)',
-                                                        padding: '0.4rem 0.6rem', 
-                                                        borderRadius: '8px',
-                                                        maxWidth: '90%'
-                                                    }}>
-                                                        {msg.text}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                    <div ref={chatEndRef} />
-                                </div>
-                                <div className="test-chat-input-row" style={{ padding: '0.5rem', borderTop: '1px solid var(--card-border)', display: 'flex', gap: '0.4rem', background: 'rgba(0,0,0,0.1)' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Type a message..."
-                                        value={chatInput}
-                                        onChange={(e) => setChatInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                handleSendChat();
-                                            }
-                                        }}
-                                        style={{
-                                            flex: 1,
-                                            padding: '0.4rem 0.6rem',
-                                            background: 'rgba(15, 23, 42, 0.6)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                                            borderRadius: '6px',
-                                            color: 'white',
-                                            fontSize: '0.75rem'
-                                        }}
-                                    />
-                                    <button 
-                                        onClick={handleSendChat}
-                                        style={{
-                                            background: 'var(--primary)',
-                                            border: 'none',
-                                            color: 'white',
-                                            padding: '0.4rem 0.6rem',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}
-                                    >
-                                        <Send size={12} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </aside>
-                )}
+            {/* Sub Top Bar */}
+            <div className="te-sub-header">
+                <div className="te-sub-links">
+                    <span>SYMBOLS</span>
+                    <span>INSTRUCTIONS</span>
+                    <span>OVERALL TEST SUMMARY</span>
+                </div>
+                <div className="te-total-answered">
+                    Total Questions Answered: <span className="badge-yellow">{getAnsweredCount()}</span>
+                </div>
             </div>
 
+            {/* Action Bar */}
+            <div className="te-action-bar">
+                <div className="te-section-tabs">
+                    <div className="te-tab active">PART-A</div>
+                    {/* Add more tabs if multipart exists in data */}
+                </div>
+                <div className="te-buttons">
+                    {isFriendly ? (
+                        <>
+                            {/* Friendly Mode Actions */}
+                            {friendlyAnswered ? (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic', marginRight: '1rem', display: 'flex', alignItems: 'center' }}>
+                                    ✓ Response submitted. Waiting for others...
+                                </span>
+                            ) : (
+                                <>
+                                    {isAnswered ? (
+                                        <>
+                                            <button 
+                                                className="te-btn" 
+                                                onClick={() => {
+                                                    const newReview = new Set(markedForReview || []);
+                                                    if (newReview.has(currentQuestionIndex)) {
+                                                        newReview.delete(currentQuestionIndex);
+                                                    } else {
+                                                        newReview.add(currentQuestionIndex);
+                                                    }
+                                                    updateExamState({ markedForReview: Array.from(newReview) });
+                                                }}
+                                            >
+                                                {markedForReview && markedForReview.includes(currentQuestionIndex) ? 'Unmark' : 'Mark for Review'}
+                                            </button>
+                                            <button className="te-btn submit" onClick={handleSaveAnswer}>
+                                                Submit Answer
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button className="te-btn" onClick={handleIndividualSkip}>
+                                            Skip
+                                        </button>
+                                    )}
+                                </>
+                            )}
 
-            {activeProfileQuery && (
-                <UserProfileModal 
-                    queryEmail={activeProfileQuery.email}
-                    queryName={activeProfileQuery.name}
-                    onClose={() => setActiveProfileQuery(null)}
+                            {room.isHost && (
+                                <>
+                                    <button className="te-btn" style={{ background: 'var(--c-accent2)', color: 'var(--text-dark)' }} onClick={handleSkipForAll}>Skip for All</button>
+                                    <button className="te-btn" style={{ background: 'var(--c-primary)', color: '#2C2F40' }} onClick={handleForceReveal}>Force Reveal</button>
+                                    {(friendlyRevealed || (friendlyAnswered && currentQuestionIndex === roomActiveQuestionIndex)) && !isLastQuestion && (
+                                        <button className="te-btn submit" onClick={handleNextFriendly}>Next Question</button>
+                                    )}
+                                    {isLastQuestion && <button className="te-btn submit" onClick={handleFinishFriendly}>Finish Test</button>}
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            {/* Normal Mode Actions */}
+                            <button className="te-btn" onClick={handleReviewAndNext}>Mark for Review</button>
+
+                            <button className="te-btn" onClick={handleNext}>Save & Next</button>
+
+                            <button className="te-btn submit" onClick={() => setConfirmSubmit(true)}>Submit Test</button>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="te-main-area">
+                
+                {/* Left Pane (Question) */}
+                <div className="te-left-pane">
+                    <div className="te-question-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span className="te-question-no">Question No. {currentQuestionIndex + 1}</span>
+                            {/* Finish Test Controls */}
+                            {isMultiplayer && (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button 
+                                        className="te-btn submit" 
+                                        style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+                                        onClick={() => handleSubmit(false)}
+                                    >
+                                        Finish Individual Test
+                                    </button>
+                                    {room.isHost && (
+                                        <button 
+                                            className="te-btn save" 
+                                            style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem', background: '#c0392b' }}
+                                            onClick={() => {
+                                                if (window.confirm("Are you sure you want to finish the test for ALL participants?")) {
+                                                    room.socket?.emit('forceSubmitAll', { code: roomCode });
+                                                }
+                                            }}
+                                        >
+                                            Finish Test For All
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <span style={{ fontSize: '0.8rem', marginRight: '1rem' }}>Select Language <select><option>English</option></select></span>
+                            <span style={{ fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-muted)' }}>⚠️ Report</span>
+                        </div>
+                    </div>
+                    
+                    <div className="te-question-content">
+                        {currentQuestion ? (
+                            <>
+                                <div style={{ marginBottom: '1rem', fontSize: '1.1rem' }} className="markdown-content">
+                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{currentQuestion.question_text || currentQuestion.text}</ReactMarkdown>
+                                </div>
+                                {isSeatingArrangement(currentQuestion, testFormat) ? (
+                                    renderSeatingArrangement(currentQuestion)
+                                ) : (
+                                    <div className="te-options-list">
+                                        {currentQuestion.options?.map((opt, idx) => {
+                                            let optionClass = `te-option-item ${answers[currentQuestionIndex] === idx ? 'selected' : ''}`;
+                                            if (isFriendly && isQuestionRevealed && questionRevealData) {
+                                                const isCorrectAns = idx === currentQuestion.correctAnswer;
+                                                const isUserChoice = idx === answers[currentQuestionIndex];
+                                                if (isCorrectAns) {
+                                                    optionClass += ' reveal-correct';
+                                                } else if (isUserChoice) {
+                                                    optionClass += ' reveal-incorrect';
+                                                }
+                                            }
+                                            return (
+                                                <label key={idx} className={optionClass}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="q-option" 
+                                                        className="te-option-radio"
+                                                        checked={answers[currentQuestionIndex] === idx}
+                                                        onClick={() => handleOptionSelect(idx)}
+                                                        onChange={() => {}} /* Prevent React warning, handled by onClick */
+                                                        disabled={isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered || friendlyRevealed)}
+                                                    />
+                                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{opt}</ReactMarkdown>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <p>Loading question...</p>
+                        )}
+
+                        {/* Show Answers if revealed in Friendly Mode */}
+                        {isFriendly && isQuestionRevealed && questionRevealData && (
+                            <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--c-accent1)', borderRadius: '4px' }}>
+                                <h4>Correct Answer: Option {currentQuestion.correctAnswer + 1}</h4>
+                                {currentQuestion.explanation && <p>{currentQuestion.explanation}</p>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right Pane (Palette) */}
+                <div className={`te-right-pane ${isPaletteCollapsed ? 'collapsed' : ''}`}>
+                    <div className="te-right-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{!isPaletteCollapsed && '▶ Test / Status'}</span>
+                        <button className="collapse-btn" onClick={() => setIsPaletteCollapsed(!isPaletteCollapsed)} title="Toggle Panel">
+                            {isPaletteCollapsed ? <List size={18} /> : <ChevronRight size={18} />}
+                        </button>
+                    </div>
+                    
+                    {!isPaletteCollapsed && (
+                        <>
+                            {isFriendly && (
+                                <div className="te-tabs">
+                                    <button className={`te-tab ${activeTab === 'players' ? 'active' : ''}`} onClick={() => setActiveTab('players')}>Status</button>
+                                    <button className={`te-tab ${activeTab === 'palette' ? 'active' : ''}`} onClick={() => setActiveTab('palette')}>Grid</button>
+                                </div>
+                            )}
+
+                            {(activeTab === 'palette' || !isFriendly) && (
+                                <>
+                                    <div className="te-grid-container">
+                        <div className="te-question-grid">
+                            {questions.map((_, idx) => (
+                                <button 
+                                    key={idx}
+                                    className={`te-grid-btn status-${getGridStatus(idx)} ${isFriendly && idx > roomActiveQuestionIndex ? 'locked' : ''}`}
+                                    onClick={() => {
+                                        if (isFriendly && idx > roomActiveQuestionIndex) return;
+                                        updateExamState({ currentQuestionIndex: idx });
+                                    }}
+                                >
+                                    {idx + 1}
+                                    {/* Show friends avatars who answered this in friendly mode */}
+                                    {isFriendly && room.participants?.filter(p => !p.isConductor)?.map(p => {
+                                        if (hasPlayerAnsweredQuestion(p.name, idx)) {
+                                            return <div key={p.id} className="friend-badge-te" title={`${p.name} answered`}>{(p.name?.[0] || 'P').toUpperCase()}</div>;
+                                        }
+                                        return null;
+                                    })}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* Analysis Table */}
+                    <div className="te-analysis-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th colSpan="2">PART-A Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Answered</td>
+                                    <td className="count-badge">{getAnsweredCount()}</td>
+                                </tr>
+                                <tr>
+                                    <td>Not Answered</td>
+                                    <td className="count-badge" style={{color:'red'}}>{getNotAnsweredCount()}</td>
+                                </tr>
+                                <tr>
+                                    <td>Mark for Review</td>
+                                    <td className="count-badge">{getMarkedCount()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+
+            {isFriendly && activeTab === 'players' && (
+                <div className="te-status-panel" style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+                    <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-dark)' }}>Live Room Status</h4>
+                    {(room.participants || []).filter(p => !p.isConductor).map(p => {
+                        const isAnswered = hasPlayerAnsweredQuestion(p.name, currentQuestionIndex);
+                        const playerChoiceData = friendlyRevealData?.playerChoices?.[p.name] || (isQuestionRevealed && friendlyReveals[currentQuestionIndex]?.playerChoices?.[p.name]);
+                        
+                        return (
+                            <div key={p.id} className="player-status-card" style={{
+                                padding: '0.75rem', 
+                                marginBottom: '0.5rem', 
+                                borderRadius: '6px', 
+                                background: 'white',
+                                border: `1px solid ${playerChoiceData ? (playerChoiceData.isCorrect ? 'var(--c-accent1)' : 'var(--status-not-answered)') : (isAnswered ? 'lightpink' : 'var(--border-color)')}`,
+                                boxShadow: (!playerChoiceData && isAnswered) ? 'inset 0 0 10px lightpink' : 'none',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 'bold' }}>
+                                        {p.name}
+                                        {activeEmotes.find(e => e.sender === p.name) && (
+                                            <span style={{ marginLeft: '8px', verticalAlign: 'middle', display: 'inline-flex' }} className="animate-bounce">
+                                                <EmoteIcon emoteKey={activeEmotes.slice().reverse().find(e => e.sender === p.name).emoteKey} size={16} />
+                                            </span>
+                                        )}
+                                    </span>
+                                    {playerChoiceData ? (
+                                        <span style={{ fontSize: '0.8rem', color: playerChoiceData.isCorrect ? 'var(--status-answered)' : 'var(--status-not-answered)', fontWeight: 'bold' }}>
+                                            {playerChoiceData.isCorrect ? 'Correct' : 'Incorrect'} 
+                                            {playerChoiceData.choice !== -1 ? ` (Option ${String.fromCharCode(65 + playerChoiceData.choice)})` : ' (Skipped)'}
+                                        </span>
+                                    ) : isAnswered ? (
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Locked In</span>
+                                    ) : (
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Thinking...</span>
+                                    )}
+                                </div>
+                                
+                                {playerChoiceData && (
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        Selected: Option {playerChoiceData.choice + 1}
+                                    </div>
+                                )}
+                                
+                                {(isAnswered || playerChoiceData) && (
+                                    <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                                        Time taken: {playerChoiceData ? playerChoiceData.timeSpentSec : friendlyAnswerStatus.answeredPlayers?.find(ap => ap.name === p.name)?.timeSpentSec || 0}s
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </>
+    )}
+</div>
+
+</div>
+
+            {/* Chat FAB & Drawer - Replaced with FriendlyChat */}
+            {isMultiplayer && room.socket && (
+                <FriendlyChat 
+                    socket={room.socket} 
+                    roomCode={roomCode} 
+                    displayName={user?.name}
+                    inline={false}
                 />
+            )}
+
+            {/* Confirm Submit Modal */}
+            {confirmSubmit && (
+                <div className="pause-overlay">
+                    <div className="pause-modal glass" style={{ textAlign: 'center' }}>
+                        <h2 style={{color: '#e74c3c'}}>Submit Test?</h2>
+                        <p>Are you sure you want to submit? You cannot return to the test.</p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
+                            <Button variant="ghost" onClick={() => setConfirmSubmit(false)}>Cancel</Button>
+                            <Button variant="danger" onClick={handleFinalSubmit}>Yes, Submit Test</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {isPaused && (
+                <div className="pause-overlay animate-fade-in" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(15, 23, 42, 0.98)', zIndex: 9999,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', padding: '2rem'
+                }}>
+                    <h2 style={{ fontSize: '2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Pause size={28} /> Test Paused
+                    </h2>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '2rem', borderRadius: '12px', minWidth: '500px' }}>
+                        <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '0.5rem', color: '#94a3b8' }}>
+                            Current Progress Stats
+                        </h3>
+                        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.2)', color: '#cbd5e1' }}>Subject</th>
+                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.2)', color: '#cbd5e1' }}>Attempted / Total</th>
+                                    {isMultiplayer && <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.2)', color: '#cbd5e1' }}>Correct</th>}
+                                    {isMultiplayer && <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.2)', color: '#cbd5e1' }}>Wrong</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(getPauseStats()).map(([subject, data]) => (
+                                    <tr key={subject} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '0.75rem', fontWeight: 500 }}>{subject}</td>
+                                        <td style={{ padding: '0.75rem' }}>
+                                            <span style={{ color: '#60a5fa' }}>{data.attempted}</span> <span style={{ color: '#64748b' }}>/ {data.total}</span>
+                                        </td>
+                                        {isMultiplayer && <td style={{ padding: '0.75rem', color: '#4ade80' }}>{data.correct}</td>}
+                                        {isMultiplayer && <td style={{ padding: '0.75rem', color: '#f87171' }}>{data.incorrect}</td>}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <Button variant="primary" style={{ marginTop: '2rem', padding: '0.75rem 2rem', fontSize: '1.1rem' }} onClick={() => setIsPaused(false)}>
+                        <Play size={20} style={{ marginRight: '0.5rem' }} /> Resume Test
+                    </Button>
+                </div>
             )}
         </div>
     );
 };
+
+const Test = () => (
+    <TestErrorBoundary>
+        <TestInner />
+    </TestErrorBoundary>
+);
 
 export default Test;

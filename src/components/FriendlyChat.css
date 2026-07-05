@@ -524,3 +524,30 @@
     padding: 1.25rem;
     background: rgba(10, 15, 30, 0.2);
 }
+
+/* ── Emoji Bar ── */
+.chat-emoji-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.4rem 0.5rem;
+    background: rgba(15, 23, 42, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chat-emoji-bar button {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.chat-emoji-bar button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
