@@ -109,20 +109,6 @@ app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', rooms: rooms.size });
 });
 
-// ── Network Info: Return LAN IP addresses for sharing ───────────────
-app.get('/api/network-info', (_req, res) => {
-    const interfaces = os.networkInterfaces();
-    const addresses = [];
-    for (const [name, nets] of Object.entries(interfaces)) {
-        for (const net of nets) {
-            if (net.family === 'IPv4' && !net.internal) {
-                addresses.push({ name, address: net.address });
-            }
-        }
-    }
-    res.json({ addresses });
-});
-
 
 // ── Auth: Register ───────────────────────────────────────────────────
 app.post('/api/auth/register', (req, res) => {

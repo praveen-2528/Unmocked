@@ -72,18 +72,7 @@ const Lobby = () => {
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
     const [copiedInvite, setCopiedInvite] = useState(false);
-    const [copiedShareMsg, setCopiedShareMsg] = useState(false);
-    const [copiedLanLink, setCopiedLanLink] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [lanAddresses, setLanAddresses] = useState([]);
-
-    // Fetch LAN IP addresses
-    useEffect(() => {
-        fetch('/api/network-info')
-            .then(r => r.json())
-            .then(data => setLanAddresses(data.addresses || []))
-            .catch(() => { });
-    }, []);
 
     // Fetch saved mocks
     useEffect(() => {
@@ -428,21 +417,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         }
     };
 
-    const getShareUrl = () => {
-        return window.location.origin;
-    };
 
-    const copyShareMessage = async () => {
-        const shareUrl = getShareUrl();
-        let msg = `🎯 Join my UnMocked room!\n\n`;
-        msg += `👉 Click to join: ${shareUrl}/lobby?room=${room.roomCode}\n\n`;
-        msg += `🔑 Room Code: ${room.roomCode}`;
-        const success = await copyToClipboard(msg);
-        if (success) {
-            setCopiedShareMsg(true);
-            setTimeout(() => setCopiedShareMsg(false), 2500);
-        }
-    };
 
     const copyPrompt = async () => {
         const success = await copyToClipboard(generatedPrompt);
@@ -452,14 +427,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         }
     };
 
-    const copyLanLink = async () => {
-        const shareUrl = getShareUrl();
-        const success = await copyToClipboard(`${shareUrl}/lobby?room=${room.roomCode}`);
-        if (success) {
-            setCopiedLanLink(true);
-            setTimeout(() => setCopiedLanLink(false), 2000);
-        }
-    };
+
 
     // Listen for test start
     useEffect(() => {
@@ -506,37 +474,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                                 </div>
                             </div>
 
-                            {/* ── Share & Invite Section ── */}
-                            <div className="share-section">
-                                <h3 className="share-section-title"><Share2 size={16} /> Share & Invite Friends</h3>
 
-                                {/* Quick Share — copies formatted message */}
-                                <button className="share-message-btn" onClick={copyShareMessage}>
-                                    {copiedShareMsg ? (
-                                        <><Check size={18} /> Invite Copied! Paste in WhatsApp / Telegram</>
-                                    ) : (
-                                        <><Share2 size={18} /> 📋 Copy Invite Message</>
-                                    )}
-                                </button>
-                                <p className="share-hint">Copies room code + link — paste in WhatsApp, Telegram, etc.</p>
-
-                                {/* LAN Link — always visible */}
-                                <div className="share-method">
-                                    <div className="share-method-header">
-                                        <Link2 size={15} />
-                                        <span>Direct Invite Link</span>
-                                    </div>
-                                    <div className="invite-link-row">
-                                        <input className="invite-link-input" value={`${getShareUrl()}/lobby?room=${room.roomCode}`} readOnly onClick={e => e.target.select()} />
-                                        <button className="copy-invite-btn" onClick={copyLanLink}>
-                                            {copiedLanLink ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
-                                        </button>
-                                    </div>
-                                    <p className="share-method-hint">Share this link with your friends to join</p>
-                                </div>
-
-
-                            </div>
 
                             <div className="room-info-badges">
                                 <span className="info-badge">{currentTemplate?.name || selectedExam?.toUpperCase()}</span>
