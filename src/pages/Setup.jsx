@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRoom } from '../context/RoomContext';
 import { EXAM_TEMPLATES } from '../utils/examTemplates';
 import { parseCSVString } from '../utils/csvParser';
-import AIChatWidget from '../components/AIChatWidget';
+// import AIChatWidget from '../components/AIChatWidget';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { 
@@ -886,9 +886,17 @@ const Setup = () => {
 
                     </div>
 
-                {/* COLUMN 2: AI Assistant */}
+                {/* COLUMN 2: Tip of the Visit */}
                 <div className="home-ai-column">
-                    <AIChatWidget height="calc(100vh - 280px)" user={user} history={history} />
+                    <Card className="home-card glass" style={{ height: 'calc(100vh - 280px)', minHeight: '350px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2rem' }}>
+                        <div style={{ background: 'rgba(var(--primary-rgb), 0.1)', padding: '1rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
+                            <Sparkles size={40} className="text-primary" />
+                        </div>
+                        <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)', fontSize: '1.5rem' }}>Tip of the Visit</h2>
+                        <p style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: '90%' }}>
+                            "{dailyTip}"
+                        </p>
+                    </Card>
                 </div>
             </div>
 
@@ -950,15 +958,10 @@ const Setup = () => {
                     <FileText size={24} />
                     <span>Shared Docs</span>
                 </button>
-                <div className="quick-action-btn tip-card" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.05)', cursor: 'default', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--primary)' }}>
-                        <Sparkles size={16} />
-                        <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Tip of the Visit</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                        {dailyTip}
-                    </p>
-                </div>
+                <button className="quick-action-btn ai-tint" onClick={() => navigate('/ai-generator')}>
+                    <Sparkles size={24} />
+                    <span>AI Prompt Generator</span>
+                </button>
                         </div>
                     </Card>
 
