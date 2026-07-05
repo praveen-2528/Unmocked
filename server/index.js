@@ -473,7 +473,7 @@ app.post('/api/gamification/unlock-badge', verifyToken, (req, res) => {
 
 // ── History: Get User's History ──────────────────────────────────────
 app.get('/api/history', verifyToken, (req, res) => {
-    const rows = db.prepare('SELECT * FROM test_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(req.userId);
+    const rows = db.prepare('SELECT * FROM test_history WHERE user_id = ? ORDER BY created_at DESC').all(req.userId);
 
     const history = rows.map(r => ({
         id: r.id,
@@ -894,8 +894,7 @@ app.get('/api/users/profile', verifyToken, (req, res) => {
         SELECT id, exam_type, test_format, score, total, correct, incorrect, unattempted, percentage, total_time, created_at
         FROM test_history 
         WHERE user_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT 50
+        ORDER BY created_at DESC
     `).all(userRow.id);
 
     const history = rows.map(r => ({

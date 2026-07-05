@@ -7,8 +7,8 @@ const PerformanceCharts = ({ history }) => {
     // 1. Line Chart Data (Scores over time)
     const lineData = useMemo(() => {
         if (!history || history.length === 0) return [];
-        // Take the last 15 tests, sorted chronologically
-        const recent = [...history].reverse().slice(-15);
+        // Take all tests, sorted chronologically
+        const recent = [...history].reverse();
         return recent.map((test, index) => ({
             name: `Test ${index + 1}`,
             date: new Date(test.created_at).toLocaleDateString(),
@@ -62,7 +62,7 @@ const PerformanceCharts = ({ history }) => {
                 
                 {/* Line Chart: Progress */}
                 <Card className="chart-card glass">
-                    <h4>Score Progression (Last 15 Tests)</h4>
+                    <h4>Score Progression (All Tests)</h4>
                     <div className="chart-wrapper">
                         <ResponsiveContainer width="100%" height={250}>
                             <LineChart data={lineData} margin={{ top: 20, right: 20, left: -20, bottom: 0 }}>
