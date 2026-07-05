@@ -36,6 +36,27 @@ const Profile = () => {
     const [reattemptMode, setReattemptMode] = useState(false);
     const [selectedBadge, setSelectedBadge] = useState(null);
 
+    // Historical Leaderboard states
+    const [historicalLeaderboard, setHistoricalLeaderboard] = useState(null);
+    const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+    const loadHistoricalLeaderboard = async (code) => {
+        setLoadingLeaderboard(true);
+        try {
+            const res = await authFetch(`/api/history/room/${code}`);
+            const data = await res.json();
+            if (res.ok) {
+                setHistoricalLeaderboard(data.leaderboard || []);
+            } else {
+                alert(data.error || 'Failed to load leaderboard');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to load leaderboard');
+        }
+        setLoadingLeaderboard(false);
+    };
+
     // Fetch user profile & test history
     useEffect(() => {
         let url = '/api/users/profile';
@@ -373,13 +394,20 @@ const Profile = () => {
             {selectedExamDetail && !loadingExamDetail && (
                 <div className="profile-exam-detail animate-fade-in">
                     <Card className="exam-detail-header-card glass">
-                        <div className="upm-detail-nav">
-                            <Button variant="ghost" className="btn-sm" onClick={() => setSelectedExamDetail(null)}>
-                                <ChevronLeft size={16} /> Back to Profile Summary
-                            </Button>
-                            <span className="upm-detail-title">
-                                {selectedExamDetail.examType.toUpperCase()} Exam Breakdown — Score: {selectedExamDetail.score}/{selectedExamDetail.total} ({selectedExamDetail.percentage}%)
-                            </span>
+                        <div className="upm-detail-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <Button variant="ghost" className="btn-sm" onClick={() => setSelectedExamDetail(null)}>
+                                    <ChevronLeft size={16} /> Back to Profile Summary
+                                </Button>
+                                <span className="upm-detail-title">
+                                    {selectedExamDetail.examType.toUpperCase()} Exam Breakdown — Score: {selectedExamDetail.score}/{selectedExamDetail.total} ({selectedExamDetail.percentage}%)
+                                </span>
+                            </div>
+                            {selectedExamDetail.isMultiplayer && selectedExamDetail.testCode && (
+                                <Button variant="primary" className="btn-sm" onClick={() => loadHistoricalLeaderboard(selectedExamDetail.testCode)} disabled={loadingLeaderboard}>
+                                    <Trophy size={16} style={{marginRight: '6px'}} /> {loadingLeaderboard ? 'Loading...' : 'View Multiplayer Leaderboard'}
+                                </Button>
+                            )}
                         </div>
                     </Card>
 
@@ -563,6 +591,45 @@ const Profile = () => {
                                     <Lock size={16} />
                                     <span>Locked — Complete requirements to unlock</span>
                                 </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Historical Leaderboard Modal */}
+            {historicalLeaderboard && (
+                <div className="modal-overlay" onClick={() => setHistoricalLeaderboard(null)} style={{ zIndex: 9999 }}>
+                    <div className="modal-content glass" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%', padding: '1.5rem', borderRadius: '16px' }}>
+                        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}><Trophy size={24} color="#facc15" /> Multiplayer Leaderboard</h2>
+                            <button className="icon-btn" onClick={() => setHistoricalLeaderboard(null)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body">
+                            {historicalLeaderboard.length === 0 ? (
+                                <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No leaderboard data found for this room.</p>
+                            ) : (
+                                <div className="leaderboard-list">
+                                    {historicalLeaderboard.map((player, idx) => (
+                                        <div key={player.playerId} className={`leaderboard-item`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', background: idx === 0 ? 'rgba(255,215,0,0.1)' : idx === 1 ? 'rgba(192,192,192,0.1)' : idx === 2 ? 'rgba(205,127,50,0.1)' : 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div className="rank-circle" style={{ width: '36px', height: '36px', borderRadius: '50%', background: idx === 0 ? '#facc15' : idx === 1 ? '#9ca3af' : idx === 2 ? '#b45309' : 'rgba(255,255,255,0.1)', color: idx < 3 ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                                    {idx + 1}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <strong style={{ fontSize: '1.1rem' }}>{player.playerName}</strong>
+                                                    {player.email && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{player.email}</span>}
+                                                </div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-primary)' }}>{player.score} <span style={{fontSize: '0.9rem', color: 'var(--text-secondary)'}}>/{player.total}</span></div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                                                    <Clock size={12} /> {formatTime(player.totalTime)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>

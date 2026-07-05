@@ -72,17 +72,29 @@ const normalizeSequence = (str) => {
     return str.toUpperCase().replace(/[^A-Z0-9]/g, '');
 };
 
-const ROOM_TTL = 3 * 60 * 60 * 1000; // 3 hours
+const ROOM_TTL = 10 * 60 * 1000; // 10 minutes
 
 // Auto-cleanup stale rooms
 setInterval(() => {
     const now = Date.now();
+    let deleted = false;
     for (const [code, room] of rooms) {
         if (now - room.lastActivity > ROOM_TTL) {
             io.to(code).emit('roomClosed', { reason: 'Room expired due to inactivity.' });
             rooms.delete(code);
+            deleted = true;
             console.log(`[Cleanup] Room ${code} deleted (inactive)`);
         }
+    }
+    if (deleted) {
+        io.emit('roomsUpdate', { rooms: Array.from(rooms.values()).map(r => ({
+            code: r.code,
+            hostName: r.hostName,
+            examType: r.examType,
+            testFormat: r.testFormat,
+            roomMode: r.roomMode,
+            participants: r.participants.length
+        }))});
     }
 }, 60 * 1000);
 
@@ -487,6 +499,45 @@ app.get('/api/history', verifyToken, (req, res) => {
     }));
 
     res.json({ history });
+});
+
+// ── History: Get Historical Multiplayer Leaderboard ──────────────────
+app.get('/api/history/room/:code', verifyToken, (req, res) => {
+    try {
+        const testCode = req.params.code;
+        if (!testCode) return res.status(400).json({ error: 'Room code required.' });
+
+        const rows = db.prepare(`
+            SELECT th.*, u.name as player_name, u.email as player_email
+            FROM test_history th
+            LEFT JOIN users u ON th.user_id = u.id
+            WHERE th.test_code = ? AND th.is_multiplayer = 1
+            ORDER BY th.score DESC, th.total_time ASC
+        `).all(testCode);
+
+        if (rows.length === 0) {
+            return res.json({ leaderboard: [] });
+        }
+
+        const leaderboard = rows.map(r => ({
+            playerId: r.user_id, // we'll use user_id as playerId for historical
+            playerName: r.player_name || 'Unknown',
+            email: r.player_email,
+            score: r.score,
+            total: r.total,
+            correct: r.correct,
+            incorrect: r.incorrect,
+            marks: r.total_marks,
+            maxMarks: r.max_marks,
+            totalTime: r.total_time,
+            submittedAt: r.created_at,
+        }));
+
+        res.json({ leaderboard });
+    } catch (err) {
+        console.error('Error fetching historical leaderboard:', err);
+        res.status(500).json({ error: 'Failed to fetch leaderboard.' });
+    }
 });
 
 // ── Admin: Middleware & Routes ───────────────────────────────────────
@@ -2017,6 +2068,7 @@ io.on('connection', (socket) => {
     socket.on('chatSend', ({ code, text }) => {
         const room = rooms.get(code);
         if (!room) return;
+        room.lastActivity = Date.now();
 
         const participant = room.participants.find(p => p.id === socket.id);
         const sender = participant?.name || 'Unknown';
@@ -2030,6 +2082,7 @@ io.on('connection', (socket) => {
     socket.on('submitResults', ({ code, playerName, answers, timeSpent, score, total, correct, incorrect, markingScheme }, callback) => {
         const room = rooms.get(code);
         if (!room) return callback?.({ success: false, error: 'Room not found.' });
+        room.lastActivity = Date.now();
 
         const participant = room.participants.find(p => p.id === socket.id);
         const email = participant?.email || null;
