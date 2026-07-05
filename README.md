@@ -106,11 +106,9 @@ The lobby has a built-in **Share & Invite** section with multiple ways to invite
 |--------|-------------|-----|
 | **📋 Copy Invite Message** | Anyone | One-click copies a formatted message with link + room code — paste in WhatsApp/Telegram |
 | **🏠 LAN Link** | Same WiFi | Visible copyable link like `http://192.168.x.x:5173/lobby?room=CODE` |
-| **🌐 Internet Link** | Anyone worldwide | Click "Go Online" to create a Cloudflare tunnel — public link appears instantly |
 | **🔑 Room Code** | Anyone with app access | Enter the 6-char code manually in the Join tab |
 
 - **Auto-Join** — When friends open an invite link, they're redirected to login and then **automatically taken to the room** with the code pre-filled.
-- **Powered by Cloudflare Tunnel** — No port forwarding needed. Works through NAT/firewalls.
 
 ### 🎉 Friendly Mode
 | Step | What Happens |
@@ -151,7 +149,7 @@ Perfect for competitive practice — simulate real exam conditions!
 | **Backend** | Node.js + Express + Socket.IO 4.8 (multiplayer rooms) |
 | **Database** | SQLite (better-sqlite3) for user accounts, question bank, leaderboards |
 | **Auth** | JWT + bcrypt — secure token-based authentication |
-| **Tunneling** | Cloudflare Quick Tunnels — share rooms over the internet, no port forwarding |
+| **Hosting** | AWS EC2 (Amazon Linux) with PM2 Process Manager |
 | **Routing** | React Router DOM v7 (12+ routes) |
 | **Styling** | 100% Vanilla CSS with custom glassmorphism design system |
 | **Icons** | Lucide React (tree-shakeable, lightweight) |
@@ -167,8 +165,8 @@ Perfect for competitive practice — simulate real exam conditions!
 
 ```bash
 # Clone the repository
-git clone https://github.com/praveen-2528/mockify.git
-cd unmocked
+git clone https://github.com/praveen-2528/Unmocked.git
+cd Unmocked
 
 # Install frontend dependencies
 npm install
@@ -188,7 +186,6 @@ npm run dev:full
 | Solo | `http://localhost:5173` | Vite dev server only |
 | Multiplayer | `http://localhost:5173` + `:3001` | Vite + Socket.IO server |
 | LAN Play | `http://<your-ip>:5173` | Auto-exposed to LAN (`host: true` in Vite config) |
-| Internet | Click "Go Online" in lobby | Creates a Cloudflare tunnel — shareable public URL |
 
 ### Production Build
 
@@ -196,6 +193,19 @@ npm run dev:full
 npm run build    # Outputs optimized bundle to /dist
 npm run preview  # Preview the production build locally
 ```
+
+### Deploying to AWS EC2
+
+This repository includes a deployment script (`deploy.sh`) for Amazon Linux. It installs Node.js 18, PM2, dependencies, and automatically starts the backend server in the background.
+
+```bash
+# On your Amazon Linux EC2 instance:
+git clone https://github.com/praveen-2528/Unmocked.git
+cd Unmocked
+chmod +x deploy.sh
+./deploy.sh
+```
+Make sure port `3001` is open in your EC2 Security Group.
 
 ---
 
@@ -241,7 +251,6 @@ Select Exam ──▶ Select Format ──▶ AI Prompt ──────▶ Pa
   │                                                              ├ Share & Invite
   │                                                              │  ├ Copy Invite Message
   │                                                              │  ├ LAN link (same WiFi)
-  │                                                              │  ├ Internet link (Go Online)
   │                                                              │  └ Room code
   │                                                              │
   │                                                              └ Host clicks Start
