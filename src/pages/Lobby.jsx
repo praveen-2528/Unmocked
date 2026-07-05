@@ -428,17 +428,14 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
         }
     };
 
-    const getLanUrl = () => {
-        if (lanAddresses.length > 0) {
-            return `http://${lanAddresses[0].address}:5173`;
-        }
-        return `http://${window.location.hostname}:5173`;
+    const getShareUrl = () => {
+        return window.location.origin;
     };
 
     const copyShareMessage = async () => {
-        const lanUrl = getLanUrl();
+        const shareUrl = getShareUrl();
         let msg = `🎯 Join my UnMocked room!\n\n`;
-        msg += `🏠 Same WiFi: ${lanUrl}/lobby?room=${room.roomCode}\n`;
+        msg += `👉 Click to join: ${shareUrl}/lobby?room=${room.roomCode}\n\n`;
         msg += `🔑 Room Code: ${room.roomCode}`;
         const success = await copyToClipboard(msg);
         if (success) {
@@ -456,8 +453,8 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
     };
 
     const copyLanLink = async () => {
-        const lanUrl = getLanUrl();
-        const success = await copyToClipboard(`${lanUrl}/lobby?room=${room.roomCode}`);
+        const shareUrl = getShareUrl();
+        const success = await copyToClipboard(`${shareUrl}/lobby?room=${room.roomCode}`);
         if (success) {
             setCopiedLanLink(true);
             setTimeout(() => setCopiedLanLink(false), 2000);
@@ -526,16 +523,16 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                                 {/* LAN Link — always visible */}
                                 <div className="share-method">
                                     <div className="share-method-header">
-                                        <Monitor size={15} />
-                                        <span>Same WiFi / LAN</span>
+                                        <Link2 size={15} />
+                                        <span>Direct Invite Link</span>
                                     </div>
                                     <div className="invite-link-row">
-                                        <input className="invite-link-input" value={`${lanUrl}/lobby?room=${room.roomCode}`} readOnly onClick={e => e.target.select()} />
+                                        <input className="invite-link-input" value={`${getShareUrl()}/lobby?room=${room.roomCode}`} readOnly onClick={e => e.target.select()} />
                                         <button className="copy-invite-btn" onClick={copyLanLink}>
                                             {copiedLanLink ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
                                         </button>
                                     </div>
-                                    <p className="share-method-hint">Share this link with friends on the same WiFi network</p>
+                                    <p className="share-method-hint">Share this link with your friends to join</p>
                                 </div>
 
 
