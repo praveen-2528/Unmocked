@@ -312,8 +312,11 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
 
         if (res.playerHistory) {
             initialAnswers = { ...initialAnswers, ...res.playerHistory.answers };
-            for (const [qIdx, t] of Object.entries(res.playerHistory.timeSpent)) {
+            for (const [qIdx, t] of Object.entries(res.playerHistory.timeSpent || {})) {
                 initialTimeSpent[Number(qIdx)] = t;
+            }
+            if (res.playerHistory.timeLeft !== undefined) {
+                initialTimeLeft = res.playerHistory.timeLeft;
             }
         }
 

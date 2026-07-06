@@ -185,11 +185,11 @@ export const RoomProvider = ({ children }) => {
         });
     }, []);
 
-    const createRoom = useCallback(async ({ hostName, examType, testFormat, questions, roomMode, enableChat, email, userId }) => {
+    const createRoom = useCallback(async ({ hostName, examType, testFormat, questions, roomMode, testDuration, enableChat, email, userId }) => {
         const s = await ensureConnected();
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => reject(new Error('Room creation timed out.')), 8000);
-            s.emit('createRoom', { hostName, examType, testFormat, questions, roomMode, enableChat, email, userId }, (response) => {
+            s.emit('createRoom', { hostName, examType, testFormat, questions, roomMode, testDuration, enableChat, email, userId }, (response) => {
                 clearTimeout(timeout);
                 if (response.success) {
                     setRoomState(prev => ({

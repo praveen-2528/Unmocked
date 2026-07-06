@@ -458,7 +458,7 @@ const TestInner = () => {
         return () => clearInterval(autoSaveRef.current);
     }, [isMultiplayer, testStarted, examType, testFormat, questions, answers, markedForReview, timeSpent, currentQuestionIndex, timeLeft, _saveId]);
 
-    // Sync multiplayer state to localStorage
+    // Sync multiplayer state to localStorage and Server
     useEffect(() => {
         if (isMultiplayer && testStarted && roomCode) {
             localStorage.setItem(`unmocked_mp_state_${roomCode}`, JSON.stringify({
@@ -473,8 +473,18 @@ const TestInner = () => {
                 roomMode: room.roomMode,
                 timestamp: Date.now()
             }));
+
+            // Sync to server for exam mode "middle submissions"
+            if (room?.roomMode === 'exam' && room?.socket) {
+                room.socket.emit('syncExamState', {
+                    code: roomCode,
+                    answers,
+                    timeSpent,
+                    timeLeft
+                });
+            }
         }
-    }, [isMultiplayer, testStarted, roomCode, answers, timeSpent, currentQuestionIndex, questions, examType, testFormat, room.playerName, room.roomMode]);
+    }, [isMultiplayer, testStarted, roomCode, answers, timeSpent, currentQuestionIndex, questions, examType, testFormat, room.playerName, room.roomMode, timeLeft]);
 
     const isConductor = isMultiplayer && room.isConductor;
 

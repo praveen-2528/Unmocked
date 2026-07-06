@@ -1691,6 +1691,7 @@ io.on('connection', (socket) => {
             // Friendly mode: track who answered for current question
             currentAnswers: {}, // { socketId: optionIndex }
             friendlyHistory: {},
+            examHistory: {},
             lastActivity: Date.now(),
         };
 
@@ -1836,7 +1837,7 @@ io.on('connection', (socket) => {
                     roomMode: room.roomMode,
                     friendlyAnswerStatus,
                     friendlyRevealData,
-                    playerHistory: (room.roomMode === 'friendly' && room.friendlyHistory && room.friendlyHistory[existingParticipant.name]) ? room.friendlyHistory[existingParticipant.name] : null
+                    playerHistory: room.roomMode === 'exam' ? room.examHistory?.[existingParticipant.name] : (room.roomMode === 'friendly' ? room.friendlyHistory?.[existingParticipant.name] : null)
                 });
             } else {
                 return callback({
@@ -2293,6 +2294,25 @@ io.on('connection', (socket) => {
 
         console.log(`[Room] ${playerName} submitted results in ${code} (${room.results.length}/${totalParticipants})`);
         callback?.({ success: true, rank: room.results.findIndex(r => r.playerId === socket.id) + 1 });
+    });
+
+    socket.on('restartRoom', ({ code }) => {
+        const room = rooms.get(code);
+        if (!room) return;
+        delete room.friendlyHistory;
+        delete room.examHistory;
+        io.to(code).emit('roomRestarted', { roomMode: room.roomMode });
+    });
+
+    // ── Sync Exam State (Middle Submissions) ──────────────────────────
+    socket.on('syncExamState', ({ code, answers, timeSpent, timeLeft }) => {
+        const room = rooms.get(code);
+        if (!room) return;
+        const p = room.participants.find(x => x.id === socket.id);
+        if (p && room.roomMode === 'exam') {
+            if (!room.examHistory) room.examHistory = {};
+            room.examHistory[p.name] = { answers, timeSpent, timeLeft };
+        }
     });
 
     // ── Get Leaderboard ──────────────────────────────────────────────
