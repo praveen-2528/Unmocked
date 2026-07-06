@@ -4,6 +4,7 @@ import { Sparkles, Send, Bot, User, Trash2, Square, Maximize, Minimize, Image, X
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
 import './AIChatWidget.css';
 
 const AIChatWidget = ({ height = '500px', user = null, history = [] }) => {
@@ -174,13 +175,19 @@ const AIChatWidget = ({ height = '500px', user = null, history = [] }) => {
         if (!content) return null;
         
         const renderText = (text) => {
+            const preprocessLaTeX = (str) => {
+                if (typeof str !== 'string') return str;
+                return str
+                    .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$')
+                    .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
+            };
             return (
                 <div className="markdown-body">
                     <ReactMarkdown 
-                        remarkPlugins={[remarkMath]} 
+                        remarkPlugins={[remarkGfm, remarkMath]} 
                         rehypePlugins={[rehypeKatex]}
                     >
-                        {text}
+                        {preprocessLaTeX(text)}
                     </ReactMarkdown>
                 </div>
             );

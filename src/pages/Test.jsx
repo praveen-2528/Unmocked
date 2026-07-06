@@ -14,6 +14,7 @@ import FriendlyChat from '../components/FriendlyChat';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
 import 'katex/dist/katex.min.css';
 import './Test.css';
 
@@ -41,6 +42,13 @@ class TestErrorBoundary extends React.Component {
         return this.props.children;
     }
 }
+
+const preprocessLaTeX = (text) => {
+    if (typeof text !== 'string') return text;
+    return text
+        .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$')
+        .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
+};
 
 // Seating Arrangement Helpers
 const isSeatingArrangement = (q, testFormat) => {
@@ -1643,7 +1651,7 @@ const TestInner = () => {
                         {currentQuestion ? (
                             <>
                                 <div style={{ marginBottom: '1rem', fontSize: '1.1rem' }} className="markdown-content">
-                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{currentQuestion.question_text || currentQuestion.text}</ReactMarkdown>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{preprocessLaTeX(currentQuestion.question_text || currentQuestion.text)}</ReactMarkdown>
                                 </div>
                                 {isSeatingArrangement(currentQuestion, testFormat) ? (
                                     renderSeatingArrangement(currentQuestion)
@@ -1671,7 +1679,7 @@ const TestInner = () => {
                                                         onChange={() => {}} /* Prevent React warning, handled by onClick */
                                                         disabled={isFriendly && (currentQuestionIndex < roomActiveQuestionIndex || friendlyAnswered || friendlyRevealed)}
                                                     />
-                                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{opt}</ReactMarkdown>
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{preprocessLaTeX(opt)}</ReactMarkdown>
                                                 </label>
                                             );
                                         })}
