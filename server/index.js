@@ -1661,7 +1661,7 @@ io.on('connection', (socket) => {
     console.log(`[Socket] Connected: ${socket.id}`);
 
     // ── Create Room ──────────────────────────────────────────────────
-    socket.on('createRoom', ({ hostName, examType, testFormat, questions, roomMode, enableChat, email }, callback) => {
+    socket.on('createRoom', ({ hostName, examType, testFormat, questions, roomMode, testDuration, enableChat, email }, callback) => {
         const code = generateRoomCode();
         const cleanEmail = email ? email.toLowerCase().trim() : null;
 
@@ -1679,6 +1679,7 @@ io.on('connection', (socket) => {
             testFormat,
             questions,
             roomMode,  // 'friendly' or 'exam'
+            testDuration,
             enableChat: enableChat !== false,
             isConductor,
             testCode,
@@ -1904,6 +1905,7 @@ io.on('connection', (socket) => {
             examType: room.examType,
             testFormat: room.testFormat,
             roomMode: room.roomMode,
+            testDuration: room.testDuration,
             testCode: room.testCode,
         });
 

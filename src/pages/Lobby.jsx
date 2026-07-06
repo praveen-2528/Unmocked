@@ -55,6 +55,7 @@ const Lobby = () => {
     // Step 4: Room Config
     const [hostName, setHostName] = useState(user?.name || '');
     const [roomMode, setRoomMode] = useState('friendly');
+    const [testDuration, setTestDuration] = useState(60);
     const [enableChat, setEnableChat] = useState(true);
     const [activeProfileQuery, setActiveProfileQuery] = useState(null);
 
@@ -261,6 +262,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                 testFormat,
                 questions: parsedQuestions,
                 roomMode,
+                testDuration: roomMode === 'exam' ? Number(testDuration) : undefined,
                 enableChat,
                 email: user?.email,
                 userId: user?.id
@@ -418,7 +420,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
 
     useEffect(() => {
         if (!room.socket) return;
-        const handler = ({ questions, examType: et, testFormat: tf }) => {
+        const handler = ({ questions, examType: et, testFormat: tf, roomMode, testDuration }) => {
             updateExamState({
                 examType: et,
                 testFormat: tf,
@@ -430,7 +432,7 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                 answers: {},
                 markedForReview: [],
                 timeSpent: [],
-                timeLeft: et === 'ssc' ? 60 * 60 : 120 * 60,
+                timeLeft: (roomMode === 'exam' && testDuration) ? testDuration * 60 : (et === 'ssc' ? 60 * 60 : 120 * 60),
             });
             navigate('/test');
         };
@@ -839,6 +841,20 @@ START OUTPUT WITH THE CSV HEADER ROW DIRECTLY. NO OTHER TEXT.`;
                                         </button>
                                     </div>
                                 </div>
+
+                                {roomMode === 'exam' && (
+                                    <div className="form-group">
+                                        <label>Total Test Time (minutes)</label>
+                                        <input 
+                                            type="number" 
+                                            className="lobby-input" 
+                                            value={testDuration} 
+                                            onChange={e => setTestDuration(e.target.value)} 
+                                            min="1" 
+                                            max="300"
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="form-group">
                                     <label>Chat Options</label>

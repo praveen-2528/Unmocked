@@ -354,6 +354,16 @@ const TestInner = () => {
         handleSubmit(true);
     };
 
+    // Auto-submit when time is up
+    useEffect(() => {
+        if (testStarted && timeLeft !== null && timeLeft <= 0 && !confirmSubmit) {
+            // Prevent multiple submissions
+            if (room?.results && room.results.some(r => (r.email && user && r.email === user.email) || r.playerName === user?.name || r.playerName === room.playerName)) return;
+            
+            handleSubmit(true);
+        }
+    }, [timeLeft, testStarted, confirmSubmit, room, user]);
+
     const getPauseStats = () => {
         const stats = {};
         questions.forEach((q, idx) => {
@@ -426,6 +436,9 @@ const TestInner = () => {
                     newTimeSpent[currentQuestionIndex] = (newTimeSpent[currentQuestionIndex] || 0) + 1;
                     return { timeSpent: newTimeSpent };
                 });
+                if (!isMultiplayer || room?.roomMode === 'exam') {
+                    setTimeLeft(prev => prev - 1);
+                }
             }, 1000);
         }
         return () => clearInterval(timer);
@@ -1493,6 +1506,18 @@ const TestInner = () => {
                 </div>
 
                 <div className="te-header-right">
+                    {room?.roomMode === 'exam' && (
+                        <div className="te-timer-box" style={{ display: 'flex', alignItems: 'center', marginRight: '0.5rem', background: 'rgba(231, 76, 60, 0.1)', border: '1px solid rgba(231, 76, 60, 0.3)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span className="time-label" style={{ color: '#e74c3c' }}>Time Left</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span className="time-value" style={{ color: '#e74c3c', fontWeight: 'bold' }}>
+                                        {formatTime(timeLeft)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <div className="te-timer-box" style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                             <span className="time-label">Time Spent</span>
