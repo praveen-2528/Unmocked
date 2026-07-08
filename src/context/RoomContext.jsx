@@ -282,11 +282,15 @@ export const RoomProvider = ({ children }) => {
 
     const submitResults = useCallback((resultData) => {
         return new Promise((resolve, reject) => {
-            socketRef.current?.emit('submitResults', {
+            const socket = socketRef.current;
+            if (!socket || !socket.connected) return reject(new Error('Socket not connected'));
+            
+            socket.timeout(8000).emit('submitResults', {
                 code: roomState.roomCode,
                 playerName: roomState.playerName,
                 ...resultData,
-            }, (response) => {
+            }, (err, response) => {
+                if (err) return reject(new Error('Submit request timed out. Please check your connection.'));
                 if (response?.success) resolve(response);
                 else reject(new Error(response?.error || 'Submit failed'));
             });

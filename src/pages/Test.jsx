@@ -106,6 +106,13 @@ const TestInner = () => {
     const [activeProfileQuery, setActiveProfileQuery] = useState(null);
     const [timeLeft, setTimeLeft] = useState(() => {
         if (savedTimeLeft) return savedTimeLeft;
+        if (isMultiplayer && room?.testDuration) {
+            if (room.startTime) {
+                const elapsed = Math.floor((Date.now() - room.startTime) / 1000);
+                return Math.max(0, room.testDuration - elapsed);
+            }
+            return room.testDuration;
+        }
         return examType === 'ssc' ? 60 * 60 : 120 * 60;
     });
     const [hasReadInstructions, setHasReadInstructions] = useState(() => {

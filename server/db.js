@@ -7,7 +7,11 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbPath = process.env.DB_PATH || join(__dirname, 'unmocked.db');
+const dataDir = join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+const dbPath = process.env.DB_PATH || join(dataDir, 'unmocked.db');
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrency
