@@ -24,9 +24,12 @@ node_modules
 *.sw?
 
 # SQLite databases (Tracking for EC2 deployment)
-# server/*.db
-# server/*.db-shm
-# server/*.db-wal
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+server/*.db
+server/*.db-shm
+server/*.db-wal
 
 # Agent files
 .gemini/
